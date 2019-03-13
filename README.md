@@ -1,4 +1,4 @@
-#@ BPFTrace-hol
+# BPFTrace-hol
 
 This repo contains hands-on labs to help an engineer get up to speed with the BPFTrace utility and framework. Currently  this material should work on a FB dev server but no ideas about other platforms.
 
@@ -18,8 +18,8 @@ fb-bpftrace-20190308-171433.x86_64
 
 ---
 
-####Labs
+### Labs
 
-1. {Working with system calls](syscall.md)
+1. [Working with system calls](syscall.md)
 
 ---
