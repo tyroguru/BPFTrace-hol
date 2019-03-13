@@ -42,8 +42,6 @@ tracepoint:syscalls:sys_exit_open
 
 #### Entry probes
 
-/*** Change this example to write(2) as we have opem for an example! */
-
 The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for write(2) the syscall has 3 arguments: `fd`, `buf` and `count`and we can verify that with the `-lv` options to `bpftrace`.
 
 ```
@@ -92,6 +90,7 @@ A few things to note from the above example:
 - Owing to a current architectural limit in BPF, BPFTrace restricts strings to be 64 bytes by default. We can increase these using the `BPFTRACE_STRLEN` environment variable to a maximum of 200 bytes.
 - `char *`'s must be explicitly converted to strings using the `str()` builtin.
 - The 'comm' builtin gives us the name of the process doing the write call.
+- The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very simple modification!).
 
 #### Return probes
 
