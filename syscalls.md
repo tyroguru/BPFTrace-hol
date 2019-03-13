@@ -125,7 +125,7 @@ NOTE: before attempting the tasks in this section make sure you execute 'bpfhol 
 
 #### `close(2)`
 
-- Find all close() calls on invalid file descriptors.
+1. Find all close() calls on invalid file descriptors.
 
 
 ## Further Reading
