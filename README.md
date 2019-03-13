@@ -1,6 +1,10 @@
-# BPFTrace-hol
+# BPFTrace Hands-On Labs
 
 This repo contains hands-on labs to help an engineer get up to speed with the BPFTrace utility and framework. Currently  this material should work on a FB dev server but no ideas about other platforms.
+
+[BPFTrace](https://github.com/iovisor/bpftrace) is an OSS project that provides a high level tracing language interface on top of the Enhanced Berkely Packet Filter (eBPF) framework. It was initially developed by Alistair Robertson and now has a flourishing developer community on github.
+
+---
 
 ### Prerequisites
 
@@ -14,12 +18,11 @@ This repo contains hands-on labs to help an engineer get up to speed with the BP
 fb-bpftrace-20190308-171433.x86_64
 ```
 
-[BPFTrace](https://github.com/iovisor/bpftrace) is an OSS project that provides a high level tracing language interface on top of the Enhanced Berkely Packet Filter (eBPF) framework. It was initially developed by Alistair Robertson and now has a flourishing developer community on github.
 
 ---
 
 ### Labs
 
-1. [Working with system calls](syscall.md)
+1. [Working with system calls](syscalls.md)
 
 ---
