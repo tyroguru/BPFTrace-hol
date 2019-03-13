@@ -102,9 +102,9 @@ As with any C function we only have a single return code from a syscall. As an e
 
 As you can see, the types don't agree as bpftrace always reports the return type as 'long' which is an 8 byte quantity. We may need to cast the return value accordingly to the correct return type as specified by the man page.
 
-[ XXX On an error the errno appears to be returned and not -1 - INVESTIGATE ]
+[ XXX On an error the errno appears to be returned and not -1 - explain that and expand ]
 
-### Raw vs "Nornal" syscalls
+### Raw vs "Normal" syscalls
 ---
 
 ## Exercises
@@ -113,15 +113,15 @@ NOTE: before attempting the tasks in this section make sure you execute 'bpfhol 
 
 #### `mmap(2)`
 
-- Locate the process doing the most mmap calls in a 30 second period (it should be obvious which one I'm on about :-) ).
-- What are the sizes of the segments being created?
-- Can you tell what percentage of the created mappings are private to the process and which are shared?
+1. Locate the process doing the most mmap calls in a 30 second period (it should be obvious which one I'm on about :-) ).
+1. What are the sizes of the segments being created?
+1. Can you tell what percentage of the created mappings are private to the process and which are shared?
 
 #### `open(2)`
 
-- Write a script to show which files are being opened.
-- Extend that script to show which processes are opening which file.
-- Change that script to only show open calls that are creating temp files (hint: use the `flags` argument).
+1. Write a script to show which files are being opened.
+1. Extend that script to show which processes are opening which file.
+1. Change that script to only show open calls that are creating temp files (hint: use the `flags` argument).
 
 #### `close(2)`
 
@@ -132,5 +132,5 @@ NOTE: before attempting the tasks in this section make sure you execute 'bpfhol 
 
 Each section should have some more advanced reading for those that are interested. It shouldn't be necessary to know this stuff but it may be useful for those who abolutely need to have more information to be able to use something.
 
-### How are syscall probes instrumented?
+- How are syscall probes instrumented?
 
