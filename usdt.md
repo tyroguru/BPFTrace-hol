@@ -65,7 +65,7 @@ libpthread:pthread_create [sema 0x0]
   1 location(s)
   4 argument(s)
 <chop>
-` ``
+```
 
 (*NOTE:* The number of arguments can also be discovered using `readelf -n` but the information isn't pretty printed as nicely. Give it a go!)
 
@@ -90,8 +90,6 @@ stap libpthread lll_futex_wake 0x00007fffee281ed1           /lib64/libpthread.so
 stap libpthread lll_futex_wake 0x00007fffee284704           /lib64/libpthread.so.0
 ```
 
-
-```
 
 ```
 
