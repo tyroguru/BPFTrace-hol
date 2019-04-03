@@ -24,5 +24,7 @@ fb-bpftrace-20190308-171433.x86_64
 ### Labs
 
 1. [Working with system calls](syscalls.md)
-
+1. [Working with kernel probes](kprobe.md)
+1. [Working with dynamic user probes](uprobe.md)
+1. [Working with static user probes](usdt.md)
 ---

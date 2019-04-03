@@ -109,7 +109,7 @@ As you can see, the types don't agree as bpftrace always reports the return type
 
 ## Exercises
 
-NOTE: before attempting the tasks in this section make sure you execute 'bpfhol syscalls' (which can be found in the <whatever> directory). (I have 3 examples in mind):
+NOTE: before attempting the tasks in this section select the `syscalls` option from the `bpfhol` menu.
 
 #### `mmap(2)`
 
