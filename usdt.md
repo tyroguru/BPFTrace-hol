@@ -1,9 +1,9 @@
 ## Statically Defined User Probes (USDT)
 
-(... or "Userland Statically Defined Tracepoints"). The name tells us everything:
+(... or "User(land) Statically Defined Tracepoints"). The name tells us everything:
 
 1. *Userland* - these probes are for applications and libraries.
-2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing.
+2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing. A huge advantage of this approach is that the probe can be given a name with semantic meaning: for example, you can name a probe `transaction-start` nd use this name to enable it instead of having to know a mangled C++ function name! This gives us stability and consistency in probe nomenclature.
 
 In this lab you will experiment with tracing static user probes.
 
@@ -119,3 +119,95 @@ NOTE: before attempting the tasks in this section select the `syscalls` option f
 ---
 
 ## Further Reading
+
+## Instrumentation Methodology
+
+When a DTRACE_PROBE/STAP_PROBE macro is used to insert a probe into code we end up with a sequence of instructions to setup arguments for the probe follwed by a 'nop' instruction. The 'nop' instruction is the single byte variant and this is a placeholder for where to patch when the probe is enabled (remember the point of the instrumentation is to vector us off into the kernel so that we can enter into the BPF VM).
+
+Take this extremely simple example of a probe with a single argument:
+
+```
+#include <sys/sdt.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+int main(int argc, char **argv)
+{
+  struct timeval tv;
+
+  while (1)
+  {
+    gettimeofday(&tv, NULL);
+    DTRACE_PROBE1(jons-app, bigprobe, tv.tv_sec);
+    sleep(1);
+  }
+  return 0;
+}
+
+[jonhaslam@devvm1362.cln1 ~/BPF/USDT] clang++ -g -O3 -o example example.cc
+
+[jonhaslam@devvm1362.cln1 ~/BPF/USDT] readelf -n ./example
+
+Displaying notes found at file offset 0x00000254 with length 0x00000020:
+  Owner                 Data size       Description
+  GNU                  0x00000010       NT_GNU_ABI_TAG (ABI version tag)
+    OS: Linux, ABI: 2.6.32
+
+Displaying notes found at file offset 0x0000113c with length 0x0000004c:
+  Owner                 Data size       Description
+  stapsdt              0x00000035       NT_STAPSDT (SystemTap probe descriptors)
+    Provider: jons-app
+    Name: bigprobe
+    Location: 0x0000000000400584, Base: 0x0000000000400630, Semaphore: 0x0000000000000000
+    Arguments: -8@8(%rsp)
+```
+
+If we disassemble the instructions we can see which are related to our tracing:
+
+```
+[jonhaslam@devvm1362.cln1 ~/BPF/USDT] mygdb ./example -q
+Reading symbols from ./example...
+(No debugging symbols found in ./example)
+(gdb) disas main
+Dump of assembler code for function main:
+   0x0000000000400560 <+0>:     push   %rbx
+   0x0000000000400561 <+1>:     sub    $0x20,%rsp
+   0x0000000000400565 <+5>:     lea    0x10(%rsp),%rbx
+   0x000000000040056a <+10>:    nopw   0x0(%rax,%rax,1)
+   0x0000000000400570 <+16>:    xor    %esi,%esi
+   0x0000000000400572 <+18>:    mov    %rbx,%rdi
+   0x0000000000400575 <+21>:    callq  0x400440 <gettimeofday@plt>
+   /* Load up the 'tv' pointer */
+   0x000000000040057a <+26>:    mov    0x10(%rsp),%rax
+   /* Load tv->tv_sec onto the stack */
+   0x000000000040057f <+31>:    mov    %rax,0x8(%rsp)
+   /* This is our patch slot */
+   0x0000000000400584 <+36>:    nop
+   0x0000000000400585 <+37>:    mov    $0x1,%edi
+   0x000000000040058a <+42>:    callq  0x400460 <sleep@plt>
+   0x000000000040058f <+47>:    jmp    0x400570 <main+16>
+End of assembler dump.
+```
+
+If we enable this probe we can see that the 'nop' instruction at `0x0000000000400584` has been patched dynamically to be an `int3` instruction which will cause us to trap into the kernel.
+
+```
+(gdb) disas main
+Dump of assembler code for function main(int, char**):
+   0x0000000000400560 <+0>:     push   %rbx
+   0x0000000000400561 <+1>:     sub    $0x20,%rsp
+   0x0000000000400565 <+5>:     lea    0x10(%rsp),%rbx
+   0x000000000040056a <+10>:    nopw   0x0(%rax,%rax,1)
+   0x0000000000400570 <+16>:    xor    %esi,%esi
+   0x0000000000400572 <+18>:    mov    %rbx,%rdi
+   0x0000000000400575 <+21>:    callq  0x400440 <gettimeofday@plt>
+   0x000000000040057a <+26>:    mov    0x10(%rsp),%rax
+   0x000000000040057f <+31>:    mov    %rax,0x8(%rsp)
+   0x0000000000400584 <+36>:    int3
+   0x0000000000400585 <+37>:    mov    $0x1,%edi
+   0x000000000040058a <+42>:    callq  0x400460 <sleep@plt>
+   0x000000000040058f <+47>:    jmp    0x400570 <main(int, char**)+16>
+End of assembler dump.
+```
+
+
