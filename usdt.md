@@ -91,10 +91,7 @@ stap libpthread lll_futex_wake 0x00007fffee284704           /lib64/libpthread.so
 ```
 
 
-```
-
-
-Discovering the types of a probes arguments is currently only possible through either documentation or code inspection
+Discovering the types of a probes arguments is currently only possible through either documentation or code inspection.
 
 
 ### Probe definitions
