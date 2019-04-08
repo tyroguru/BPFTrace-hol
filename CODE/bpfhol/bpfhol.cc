@@ -126,7 +126,7 @@ void terminate(void)
 void terminate_and_exit()
 {
   terminate();
-  exit(1);
+  exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -178,5 +178,9 @@ int main(int argc, char *argv[])
         default:
                 break;
     }
+
+    std::cout << "\n+-----------+\n";
+    std::cout << "Running load generator; choose (exit) to stop";
+    std::cout << "\n+-----------+\n\n";
   }
 }
