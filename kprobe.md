@@ -100,7 +100,7 @@ cgroup2 magic detected
 
 NOTE: before attempting the tasks in this section select the `kprobes` option from the `bpfhol` menu.
 
-1. `kprobeme` reads a file once a second. Which file is it?
+1. `kprobeme` `open(2)`s and `read(2)`s a file once a second. Which file is it?
 1. Is `kprobeme` opening a new file descriptor every time?
 1. Is `kprobeme` leaking file descriptors? (HINT: use an associative map)
 
