@@ -59,7 +59,7 @@ void syscalls()
 
 void kprobes()
 {
-  std::string progs[] = { "kprobes/opens" };
+  std::string progs[] = { "kprobes/kprobeme" };
 
   for (auto prog : progs )
   {

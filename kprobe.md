@@ -96,7 +96,7 @@ cgroup2 magic detected
 ---
 ## Exercises
 
-### (kprobeme)
+### kprobeme
 
 NOTE: before attempting the tasks in this section select the `kprobes` option from the `bpfhol` menu.
 

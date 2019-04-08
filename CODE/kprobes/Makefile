@@ -1,7 +1,7 @@
-all:	opens
+all:	kprobeme
 
-usdt-passwd:	opens.cc
-		clang++ -g -o usdt-passwd opens.cc
+kprobeme:	kprobeme.cc
+		clang++ -g -o kprobeme kprobeme.cc
 
 clean:
-	rm opens
+	rm kprobeme
