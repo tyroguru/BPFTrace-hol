@@ -71,7 +71,7 @@ Note that the output format is in `nm` format. See `man nm` for more.
 ### Hands on: See how often the cgroup2 filesystem is being used:
 
 ```
-$ cat cat cgroup2.bt
+$ cat cgroup2.bt
 #include <linux/kernfs.h>
 #include <linux/fs.h>
 
