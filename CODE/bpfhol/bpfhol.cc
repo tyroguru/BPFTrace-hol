@@ -59,7 +59,12 @@ void syscalls()
 
 void kprobes()
 {
-  std::cout << "kprobes" << std::endl;
+  std::string progs[] = { "kprobes/opens" };
+
+  for (auto prog : progs )
+  {
+    execute(prog);
+  }
 }
 
 void usdt()
