@@ -114,6 +114,22 @@ Facebook developers should use Folly to declare static USDT probes. To declare a
 
 Yes, it's just one macro regardless of the number of arguments! Simply `#include <folly/tracing/StaticTracepoint.h>` and in your buck TARGETS file include a dependency for `//folly/tracing:static_tracepoint`.
 
+A quick example from the hiphop web server code (`hphp/runtime/vm/runtime.cpp`). Several functions are defined to concatonate strings, each taking a different number of strings as arguments. Each function exports the `hhvm:hhvm_cow_concat` probe which exports two integer arguments. For example, from `concat_s3()`:
+
+```
+    FOLLY_SDT(hhvm, hhvm_cow_concat, s1.size(), s2.size() + s3.size());
+```
+
+With hhvm runing on my devserver:
+
+
+
+
+
+
+
+
+
 #### IS_ENABLED probes
 
 USDT probes are relatively inexpensive in terms of cpu cycles and extra instructions but they are not free. Sometimes the cost of preparing arguments may be costly especially if the probe is in a latency sensitive area. If this is the case then FOLLY provides a mechanism which allows us to only do the expensive argument preparation of the probe is actually enabled. To do this a semaphore is associated with a probe and the semaphore is incremented on probe enabling and decremented on probe disabling.
@@ -195,15 +211,11 @@ where the glibc macro `LIBC_PROBE` is defined in terms of the `STAP_PROBE` macro
 
 # define LIBC_PROBE_1(lib, name, n, ...) \
   STAP_PROBE##n (lib, name, ## __VA_ARGS__)
+```
 
 And therefore we have the two probes defined:
 
 output
-
-
-XXX Need to do a bit on large pages and excluding probe from them.
-
-XXX section on C++ issues with mangling
 
 ---
 
