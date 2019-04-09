@@ -1,0 +1,9 @@
+thrift_library(
+  name = "if",
+  languages = [ "cpp2", "python" ],
+  thrift_srcs = { "sum.thrift" : [ "SumService" ] },
+  deps = [
+        "//common/fb303/if:fb303",
+       ],
+  py_base_module = "",
+)

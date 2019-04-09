@@ -2,15 +2,17 @@
 
 (... or "User(land) Statically Defined Tracepoints"). The name tells us everything:
 
-1. *Userland* - these probes are for applications and libraries.
+1. *User* - these probes are for applications and libraries.
 2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing. A huge advantage of this approach is that the probe can be given a name with semantic meaning: for example, you can name a probe `transaction-start` nd use this name to enable it instead of having to know a mangled C++ function name! This gives us stability and consistency in probe nomenclature.
+
+You may also see USDT probes referred to as *SDT markers*. I think this was a SystemTap attempt at changing the terminology but I'm not sure. We won't refer to them as markers. Ever.
 
 In this lab you will experiment with tracing static user probes.
 
 ---
 ### Probe discovery
 
-USDT probes are defined withon applications and libraries and there are several ways of discovering probes that are available for enabling.o
+USDT probes are statically defined within applications and libraries and there are several ways of discovering probes that are available for enabling.
 
 Using `bpftrace` for a running process:
 
@@ -37,7 +39,7 @@ usdt:/usr/local/bin/dynolog:thrift:thrift_context_stack_async_complete
 Using `bpftrace` on an executable or library:
 
 ```
-[root@devvm1362.cln1 /data/users/jonhaslam/BPFTrace-hol] /tmp/bpftrace -l /lib64/libc-2.17.so
+# /tmp/bpftrace -l /lib64/libc-2.17.so
 usdt:/lib64/libc-2.17.so:libc:setjmp
 usdt:/lib64/libc-2.17.so:libc:longjmp
 usdt:/lib64/libc-2.17.so:libc:longjmp_target
@@ -51,7 +53,7 @@ usdt:/lib64/libc-2.17.so:libc:memory_arena_reuse
 
 ### Probe arguments
 
-USDT probes don't have to export any arguments but if they do we reference then via the `argX` builtin variables with the first argument being `arg0`, the second, `arg1` and so on.  Discovering the number of of arguments a probe exports is possible using the `tplist.py` tool which is part of the `bcc` package:
+USDT probes don't have to export any arguments but if they do we reference then via the `argX` builtin variables with the first argument being `arg0`, the second, `arg1` and so on.  Discovering the number of arguments a probe exports is possible using the `tplist.py` tool which is part of the `bcc` package (this package is shipped internally as `fb-bcc-tools`):
 
 ```
 # tplist.py -v -l /lib64/libpthread.so.0
@@ -94,12 +96,133 @@ stap libpthread lll_futex_wake 0x00007fffee284704           /lib64/libpthread.so
 Discovering the types of a probes arguments is currently only possible through either documentation or code inspection.
 
 
-### Probe definitions
+## Probe definitions
 
-- sdt.h
-- folly
+### Folly SDT (Internal Facebook Way!)
+
+Facebook developers should use Folly to declare static USDT probes. To declare a probe you simply need to use the `FOLLY_SDT` macro:
+
+```
+  FOLLY_SDT(provider, name, arg1, arg2, ...)
+```
+
+Yes, it's just one macro regardless of the number of arguments! Simply `#include <folly/tracing/StaticTracepoint.h>` and in your TARGETS file include a dependency for "//folly/tracing:static_tracepoint".
+
+### IS_ENABLED probes
+
+USDT probes are relatively inexpensive in terms of cpu cycles and extra instructions but they are not free. Sometimes the cost of preparing arguments may be costly especially if the probe is in a latency sensitive area. If this is the case then FOLLY provides a mechanism which allows us to only do the expensive argument preparation of the probe is actually enabled. To do this a semaphore is associated with a probe and the semaphore is incremented on probe enabling and decremented on probe disabling.
+
+Firstly, in global scope declare the probe that has a semaphore associated with it:
+
+```
+  FOLLY_SDT_DEFINE_SEMAPHORE(provider, probe)
+```
+
+Then when we want to do the costly argument preparation we first check if the probe is enable:
+
+``
+  FOLLY_SDT_IS_ENABLED(provider, name)
+```
+
+and finally call:
+
+```
+ FOLLY_SDT_WITH_SEMAPHORE(provider, name, arg1, arg2, ...);
+```
+
+So, a trivial example would to use the `mapper:large_map` probe in this way would be:
+
+```
+  FOLLY_SDT_DEFINE_SEMAPHORE(mapper, large_map);
+
+  int map_large_region(struct context* ctx, uint64_t pgsz, uint32_t numpgs)
+  {
+    if (FOLLY_SDT_IS_ENABLED(mapper, large_map))
+    {
+      /* The call to get_num_physical_pages() is very expensive */
+      int phys_pages = get_num_physical_pages(ctx, pgsz * numpgs);
+      FOLLY_SDT_WITH_SEMAPHORE(mapper, large_map, pgsz * numpgs, phys_pages);
+    }
+    /* rest of code */
+```
+
+### Additional Facebook related note:
+
+If an application has been converted to use large pages for its text region then this causes USDT probes (and uprobes) to not work (see task T22479091). The only workaround for this at the minute is to explictly exclude functions that contain USDT probes from being include in the large page relocation process. We do this by using the `NEVER_HUGIFY()` macro to specifiy that a function should never be relocated to a large page. Obviously you will need to consider whether you want to sacrific performance for observability here.
+
+
+#### Non Folly way (External to Facebook way!)
+
+The macros a developer uses to place static probes in their code are defined in `/usr/include/sys/sdt.h`. The macros are simple to use and can be used within C++, C or assembler. the format is simply:
+
+```
+  STAP_PROBEn(provider, probename, arg0, ..., argn-1);
+```
+
+
+A trivial example from the glibc source base (`glibc-2.26/malloc/__libc_mallopt()`):
+
+
+```
+  LIBC_PROBE (memory_mallopt, 2, param_number, value);
+
+  switch (param_number)
+    {
+    case M_MXFAST:
+      if (value >= 0 && value <= MAX_FAST_SIZE)
+        {
+          LIBC_PROBE (memory_mallopt_mxfast, 2, value, get_max_fast ());
+          set_max_fast (value);
+        }
+      else
+        res = 0;
+      break;
+
+
+```
+
+where the glibc macro `LIBC_PROBE` is defined in terms of the `STAP_PROBE` macro:
+
+```
+# define LIBC_PROBE(name, n, ...) \
+  LIBC_PROBE_1 (MODULE_NAME, name, n, ## __VA_ARGS__)
+
+# define LIBC_PROBE_1(lib, name, n, ...) \
+  STAP_PROBE##n (lib, name, ## __VA_ARGS__)
+
+And therefore we have the two probes defined:
+
+output
+
+
+XXX Need to do a bit on large pages and excluding probe from them.
+
+XXX section on C++ issues with mangling
 
 ---
+
+## A comparison of USDT and uprobes (Advantages / Disadvantages)
+
+Let's summarise the advantages and disadvantages of USDT probes and uprobes:
+
+### USDT Advantages
+
+1. USDT provides a more stable naming and argument scheme. With uprobes a probe consumer as at the mercy of both the compiler toolchain and the developer. Functions may be renamed as is the case with some implementations of large pages and function signatures may change, either through mangling or function arguments changing. Although Linux USDT currently offers no scheme to enforce stability contracts on USDT probes the mere presence of a probe macro makes code maintainers think about the probe and its arguments.
+
+1. No inlining. A big problem with uprobes is that it can only instrument functions at the entry and return sites and therefore if the compiler inlines a function it is no longer available to instrument. As inlining is used extremely aggressively in optimised code for performance this is a very common problem wih uprobes. USDT with its explicit probe sites is not open to this issue.
+
+1. With USDT we can place probes at any place in the code, not just entry and return sites.
+
+1. We can export whatever data we want and are not limited to function arguments. This is a massive advantage especially without a full typing system available to us (it's virtually impossible to manipulate members of C++ classes passed as arguments at the minute). With USDT probes though we can access whatever data we want in a function to provide it as a probe argument and even  call functions to prepare arguments!
+
+
+### USDT Disadvantages
+
+1. Performance. As we've seen, USDT probes introduce more instructions into the instruction stream. Arguments have to be placed in registers and instrumentation instructions have to be inserted. We also have to keep record metadata about probes and their arguments into the ELF binary. This additions are very minor but need to be kept in mind.
+
+1. USDT probes are static and therefore require judicious developer insight for placement and arguments.
+
+
 ## Exercises
 
 NOTE: before attempting the tasks in this section select the `syscalls` option from the `bpfhol` menu.
@@ -200,11 +323,13 @@ Dump of assembler code for function main(int, char**):
    0x0000000000400575 <+21>:    callq  0x400440 <gettimeofday@plt>
    0x000000000040057a <+26>:    mov    0x10(%rsp),%rax
    0x000000000040057f <+31>:    mov    %rax,0x8(%rsp)
-   0x0000000000400584 <+36>:    int3
+   0x0000000000400584 <+36>:    int3            <---- !!!
    0x0000000000400585 <+37>:    mov    $0x1,%edi
    0x000000000040058a <+42>:    callq  0x400460 <sleep@plt>
    0x000000000040058f <+47>:    jmp    0x400570 <main(int, char**)+16>
 End of assembler dump.
 ```
+
+The `int3` instruction causes the application to trap into the kernel where the trap handler code vectors us off into the BPF virtual machine (XXX Reference / MORE).
 
 

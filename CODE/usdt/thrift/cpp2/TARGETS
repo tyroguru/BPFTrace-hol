@@ -1,0 +1,13 @@
+cpp_binary (
+  name = "sum",
+  srcs = [
+          "SumServer.cpp",
+          "SumHandler.cpp",
+         ],
+  deps = [
+          "//common/services/cpp:cpp",
+          "//bpftrace-hol/if:if-cpp2",
+          "//thrift/lib/cpp2:server",
+          "//folly/tracing:static_tracepoint",
+         ],
+)

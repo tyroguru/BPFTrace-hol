@@ -69,7 +69,7 @@ void kprobes()
 
 void usdt()
 {
-  std::string progs[] = { "usdt/usdt-passwd", "syscalls/mapit" };
+  std::string progs[] = { "usdt/usdt-passwd" };
 
   for (auto prog : progs )
   {
