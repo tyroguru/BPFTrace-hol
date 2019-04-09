@@ -122,11 +122,12 @@ A quick example from the hiphop web server code (`hphp/runtime/vm/runtime.cpp`).
 
 With hhvm runing on my devserver:
 
+```
+[root@devvm1362.cln1 /root] /tmp/bpftrace -l '*hhvm_cow_concat*' -p 789965
+usdt:/data/users/jonhaslam/fbsource/fbcode/buck-out/dbgo/gen/hphp/hhvm/hhvm/hhvm:hhvm:hhvm_cow_concat
+```
 
-
-
-
-
+XXX Finish this!
 
 
 
@@ -243,7 +244,7 @@ Let's summarise the advantages and disadvantages of USDT probes and uprobes:
 
 ## Exercises
 
-NOTE: before attempting the tasks in this section select the `syscalls` option from the `bpfhol` menu.
+NOTE: before attempting the tasks in this section select the `usdt` option from the `bpfhol` menu.
 
 ### (userpasswd)
 
@@ -253,6 +254,7 @@ NOTE: before attempting the tasks in this section select the `syscalls` option f
 1. *XXX* How about getting them to add a second probe?
 1. *XXX* How about getting them to add a second `passwdfound` probe and looking at the locations?
 
+### thrift example
 
 ---
 
