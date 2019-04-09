@@ -3,9 +3,9 @@
 (... or "User(land) Statically Defined Tracepoints"). The name tells us everything:
 
 1. *User* - these probes are for applications and libraries.
-2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing. A huge advantage of this approach is that the probe can be given a name with semantic meaning: for example, you can name a probe `transaction-start` nd use this name to enable it instead of having to know a mangled C++ function name! This gives us stability and consistency in probe nomenclature.
+2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing. A huge advantage of this approach is that the probe can be given a name with semantic meaning: for example, you can name a probe `transaction-start` and use this name to enable it instead of having to know a mangled C++ function name! This gives us stability and consistency in probe nomenclature.
 
-You may also see USDT probes referred to as *SDT markers*. I think this was a SystemTap attempt at changing the terminology but I'm not sure. We won't refer to them as markers. Ever.
+Be aware that you may also see USDT probes referred to as *markers*.
 
 In this lab you will experiment with tracing static user probes.
 
@@ -51,6 +51,10 @@ usdt:/lib64/libc-2.17.so:libc:memory_arena_reuse
 <elided>
 ```
 
+### Probe components
+
+XXX Explain the components of a probe (provider:/path/to/probe:whoknows:probe_name)
+
 ### Probe arguments
 
 USDT probes don't have to export any arguments but if they do we reference then via the `argX` builtin variables with the first argument being `arg0`, the second, `arg1` and so on.  Discovering the number of arguments a probe exports is possible using the `tplist.py` tool which is part of the `bcc` package (this package is shipped internally as `fb-bcc-tools`):
@@ -71,7 +75,7 @@ libpthread:pthread_create [sema 0x0]
 
 (*NOTE:* The number of arguments can also be discovered using `readelf -n` but the information isn't pretty printed as nicely. Give it a go!)
 
-The output from `tplist.py` given above raises an important point about USDT probes: a single probe can be located at multiple places in a code base. For example, if some code has multiple locations where a transaction can be inititiated we may want to define a single probe for this operation, `txn-start` for example, and we would need to place this probe at each of these call sites. When we subsequently enable the `txn-start` probe the bpf subsystem would ensure that all locations where this probe is defined are instrumented.
+The output from `tplist.py` given above raises an important point about USDT probes: a single probe can be located at multiple places in a code base. For example, if some code has multiple locations where a transaction can be inititiated we may want to define a single probe for this operation, `transaction-start` for example, and we would need to place this probe at each of these call sites. When we subsequently enable the `transaction-start` probe the bpf subsystem would ensure that all locations where this probe is defined are instrumented.
 
 In the tplist.py example above we can see that the `libpthread:lll_futex_wake` probe has been inserted at 12 different locations! We can use our good friend gdb to tell us exactly where:
 
@@ -96,7 +100,9 @@ stap libpthread lll_futex_wake 0x00007fffee284704           /lib64/libpthread.so
 Discovering the types of a probes arguments is currently only possible through either documentation or code inspection.
 
 
-## Probe definitions
+### Inserting probes into code
+
+How to insert USDT probes into code isn't specific to bpftrace but as it's such an important area for userland developers we thought it best to include a small section on how to do this.
 
 ### Folly SDT (Internal Facebook Way!)
 
@@ -106,9 +112,9 @@ Facebook developers should use Folly to declare static USDT probes. To declare a
   FOLLY_SDT(provider, name, arg1, arg2, ...)
 ```
 
-Yes, it's just one macro regardless of the number of arguments! Simply `#include <folly/tracing/StaticTracepoint.h>` and in your TARGETS file include a dependency for "//folly/tracing:static_tracepoint".
+Yes, it's just one macro regardless of the number of arguments! Simply `#include <folly/tracing/StaticTracepoint.h>` and in your buck TARGETS file include a dependency for `//folly/tracing:static_tracepoint`.
 
-### IS_ENABLED probes
+#### IS_ENABLED probes
 
 USDT probes are relatively inexpensive in terms of cpu cycles and extra instructions but they are not free. Sometimes the cost of preparing arguments may be costly especially if the probe is in a latency sensitive area. If this is the case then FOLLY provides a mechanism which allows us to only do the expensive argument preparation of the probe is actually enabled. To do this a semaphore is associated with a probe and the semaphore is incremented on probe enabling and decremented on probe disabling.
 
@@ -120,7 +126,7 @@ Firstly, in global scope declare the probe that has a semaphore associated with 
 
 Then when we want to do the costly argument preparation we first check if the probe is enable:
 
-``
+```
   FOLLY_SDT_IS_ENABLED(provider, name)
 ```
 
