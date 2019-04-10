@@ -61,7 +61,7 @@ usdt:binary_or_library_path:[probe_namespace]:probe_name
 
 Where:
 
-**usdt**:` Provider name (currently fixed at `usdt`)
+**usdt**:` Provider name (currently fixed at *usdt*)
 **binary_or_library_path:** If an absolute path is specified then that will be used or the users $PATH will be searched.
 **[probe_namespace]:** optional and will default to the basename of the binary or library path.
 **probe_name:** name of the probe
