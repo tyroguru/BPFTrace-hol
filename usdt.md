@@ -1,9 +1,9 @@
 ## Statically Defined User Probes (USDT)
 
 ```diff
-+ This is just an example red
-+ and so is this
-+ and so is this one
+- This is just an example red
+- and so is this
+- and so is this one
 ```
 
 (... or "User(land) Statically Defined Tracepoints"). The name tells us everything:
