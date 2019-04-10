@@ -1,15 +1,9 @@
 ## Statically Defined User Probes (USDT)
 
-```diff
-- This is just an example red
-- and so is this
-- and so is this one
-```
-
 (... or "User(land) Statically Defined Tracepoints"). The name tells us everything:
 
 1. *User* - these probes are for applications and libraries.
-2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing. A huge advantage of this approach is that the probe can be given a name with semantic meaning: for example, you can name a probe `transaction-start` and use this name to enable it instead of having to know a mangled C++ function name! This gives us stability and consistency in probe nomenclature.
+2. *Statically Defined Tracepoints* - The tracepoints (a.k.a the *probes and arguments*) are statically defined by the developer apriori via macros. You as a developer decide where to place probes in your code and these can then be *dynamically* enabled via bpftrace scripts when the code is executing. A huge advantage of this approach is that the probe can be given a name with specific semantics: for example, you can name a probe `transaction-start` and use this name to enable it instead of having to know a mangled C++ function name! This gives us stability and consistency in probe nomenclature.
 
 Be aware that you may also see USDT probes referred to as *markers*.
 
@@ -59,7 +53,19 @@ usdt:/lib64/libc-2.17.so:libc:memory_arena_reuse
 
 ### Probe components
 
-XXX Explain the components of a probe (provider:/path/to/probe:whoknows:probe_name)
+The format of a USDT probe is:
+
+```
+usdt:binary_or_library_path:[probe_namespace]:probe_name
+```
+
+Where:
+
+`usdt:` Provider name (fixed at `usdt`)
+`binary_or_library_path:` If an absolute path is specified then that will be used or the users $PATH will be searched.
+`[probe_namespace]:` optional and will default to the basename of the binary or library path.
+`probe_name:` name of the probe
+
 
 ### Probe arguments
 
@@ -105,6 +111,7 @@ stap libpthread lll_futex_wake 0x00007fffee284704           /lib64/libpthread.so
 
 Discovering the types of a probes arguments is currently only possible through either documentation or code inspection.
 
+---
 
 ### Inserting probes into code
 
@@ -180,7 +187,7 @@ So, a trivial example would to use the `mapper:large_map` probe in this way woul
 If an application has been converted to use large pages for its text region then this causes USDT probes (and uprobes) to not work (see task T22479091). The only workaround for this at the minute is to explictly exclude functions that contain USDT probes from being include in the large page relocation process. We do this by using the `NEVER_HUGIFY()` macro to specifiy that a function should never be relocated to a large page. Obviously you will need to consider whether you want to sacrific performance for observability here.
 
 
-#### Non Folly way (External to Facebook way!)
+### Non-Folly way (External to Facebook!)
 
 The macros a developer uses to place static probes in their code are defined in `/usr/include/sys/sdt.h`. The macros are simple to use and can be used within C++, C or assembler. the format is simply:
 
@@ -209,7 +216,6 @@ A trivial example from the glibc source base (`glibc-2.26/malloc/__libc_mallopt(
 
 
 ```
-
 where the glibc macro `LIBC_PROBE` is defined in terms of the `STAP_PROBE` macro:
 
 ```
