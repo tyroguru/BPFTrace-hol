@@ -268,6 +268,8 @@ NOTE: before attempting the tasks in this section select the `usdt` option from 
 
 ### thrift example
 
+I have taken the baic thrift example and added a probe to it. They would need to copy it to an fbcode directory, build it and run it. It needs to be made a bity more interesting but I think it's got legs.
+
 ---
 
 ## Further Reading
