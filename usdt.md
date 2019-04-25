@@ -17,7 +17,7 @@ USDT probes are statically defined within applications and libraries and there a
 Using `bpftrace` for a running process:
 
 ```
-# /tmp/bpftrace -l -p `pgrep dyno`| grep usdt
+# bpftrace -l -p `pgrep dyno`| grep usdt
 usdt:/usr/local/bin/dynolog:folly:request_context_switch_before
 usdt:/usr/local/bin/dynolog:thrift:crochet_request_data_context
 usdt:/usr/local/bin/dynolog:thrift:strobelight_probe_data_destruct
@@ -39,7 +39,7 @@ usdt:/usr/local/bin/dynolog:thrift:thrift_context_stack_async_complete
 Using `bpftrace` on an executable or library:
 
 ```
-# /tmp/bpftrace -l /lib64/libc-2.17.so
+# bpftrace -l /lib64/libc-2.17.so
 usdt:/lib64/libc-2.17.so:libc:setjmp
 usdt:/lib64/libc-2.17.so:libc:longjmp
 usdt:/lib64/libc-2.17.so:libc:longjmp_target
@@ -69,7 +69,7 @@ Where:
 
 ### Probe arguments
 
-USDT probes don't have to export any arguments but if they do we reference then via the `argX` builtin variables with the first argument being `arg0`, the second, `arg1` and so on.  Discovering the number of arguments a probe exports is possible using the `tplist.py` tool which is part of the `bcc` package (this package is shipped internally as `fb-bcc-tools`):
+USDT probes don't have to export any arguments but if they do we reference them via the `argX` builtin variables with the first argument being `arg0`, the second, `arg1` and so on.  Discovering the number of arguments a probe exports is possible using the `tplist.py` tool which is part of the `bcc` package (this package is shipped internally as `fb-bcc-tools`):
 
 ```
 # tplist.py -v -l /lib64/libpthread.so.0
