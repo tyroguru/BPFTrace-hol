@@ -106,11 +106,11 @@ Attaching 1 probe...
 
 ### Exercise
 
-1 write a script to keep count of the number of system calls each process makes.(hint: use the sum() aggregating function)
-1 expand the above script to display the per-process system call counts every 10 seconds (hint: use an `interval` timer)
-1 add the ability to only display the top 10 per process counts (hint: use the `print` action)
-1 delete all per-process syscall stats every 10 secs (hint: `clear`);
-1 finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
+1. write a script to keep count of the number of system calls each process makes.(hint: use the sum() aggregating function)
+1. expand the above script to display the per-process system call counts every 10 seconds (hint: use an `interval` timer)
+1. add the ability to only display the top 10 per process counts (hint: use the `print` action)
+1. delete all per-process syscall stats every 10 secs (hint: `clear`);
+1. finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
 
 
 ### Associative arrays
