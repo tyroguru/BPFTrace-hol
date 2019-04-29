@@ -145,6 +145,7 @@ Sometimes we may want to track the behaviour of individual threads within a proc
     $time_taken = nsecs - @[tid];
     @[tid] = 0;
   }
+```
 
 Things to note:
 
