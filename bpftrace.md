@@ -13,7 +13,7 @@ A key attribute of bpftrace is its *dynamic* nature. To understand the myriad co
 1. Analyse data.
 1. Rinse and Repeat until satisfaction is achieved.
 
-The problem with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time. In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
+The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
 
 bpftrace solves these problems by allowing us to trivially dynamically modify the system to capture arbitrary data without modifying any code. As modifying the system is so easy to do we can very quickly iterate through different hypothesis and gain novel insights about systemic behaviour in very short periods of time.
 
@@ -54,7 +54,7 @@ Things to note:
 
 **NOTE**: maps are a key data structure that you'll use very frequently!
 
-1. Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls!
+2 Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls!
 
 ```
 # bpftrace -e 'tracepoint:syscalls:sys_enter_futex{@calls[comm] = count();}'
