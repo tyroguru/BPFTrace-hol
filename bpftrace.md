@@ -113,5 +113,62 @@ Attaching 1 probe...
 1. finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
 
 
-### Associative arrays
+### pid's, tid's, names
 
+Process ane thread identifiers are something we come across a lot when trying to track behaviour of our code. bpftrace has builtin variables that allow us to refer to these identifiers and are frequently used with associative arrays. It's important to understand exactly what is referred to here especially within Facebook where we have many multi-threaded processes:
+
+- `pid`: The *process id* is constant for every thread in a process - this is the identifier given to the very first thread in the process and is referred to in Linux as the tgid (Thread Group Id).
+- `tid`: every thread is given a *thread id* to uniquely identify it. This is confusingly referred to in Linux as the threads PID.
+- `comm`: we've met this builtin variable previously and it provides the name of the current thread. NOTE: threads inherit the name from their parent but many set their own thread name so threads within the same process may well have different names.
+
+### Exercise
+
+Let's look at the `cppfbagentd` WDB process as an example:
+
+1. Count the syscalls made by each <pid, tid> pair for every thread in the cppfbagentd process.
+2. Target a particular tid discovered previously and keep a count of the individual syscalls it makes.
+3. Target this same tid but this time using only the `pid` and `comm` builtin variables.
+
+### Associative arrays and tracking threads
+
+Sometimes we may want to track the behaviour of individual threads within a process and associative arrays are perfect for this. For example, we may want to time how long it took a thread to execute a specific function. As there may be many threads executing this function we need to use something unique to the executing thread to identify it. For example, we can use the `tid` as a key for an associative array to store the time it entered a function:
+
+```
+  doit:entry
+  {
+    @[tid] = nsecs;
+  }
+
+  doit:return
+  /@[tid]/
+  {
+    $time_taken = nsecs - @[tid];
+    @[tid] = 0;
+  }
+
+Things to note:
+
+* The 'nsecs' builtin variable gives us nanosecond timestamp
+* The predicate on the return probe ensures this thread has actually been through the entry probe (we could have started tracing whilst this thread was already in this function!).
+* The `$` notation indicates that we have declared a *scratch* variable that only has scope within this action block. Here the variable `$time_taken` stores the time taken in the mythical `doit` function.
+
+
+### Exercise
+
+1. Pick a thread from cppfbagentd and also one of the system calls that it makes. Write a script to time the calls and print the result using `printf`.
+1. Use the `hist()` aggregating funciton to track the range of times taken by this syscall.
+1. Now add the `max()` and `min()` functions in to track the lowest to highest times.
+1. Can you think of how you might dump the stack of a thread when it hits a new highest time value? Implement it.
+
+### Interval timers, `trunc()` and `clear()`
+
+We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
+
+```
+[root@devvm1362.cln1 ~] bpftrace -e 'interval:s:10{time("%c\n");}'
+Attaching 1 probe...
+Fri Apr 26 08:26:27 2019
+Fri Apr 26 08:26:37 2019
+Fri Apr 26 08:26:47 2019
+Fri Apr 26 08:26:57 2019
+```
