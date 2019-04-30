@@ -2,7 +2,7 @@
 
 In this lab we will work through some of the key language features of bpftrace that you will need to be familiar with. It is not an exhaustive treatment of the language but just the key concepts. I refer you to the [BPFTrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md) for details on all language features.
 
-**bpftrace** is a language that is specifically designed for tracing user and kernel software. As its primary purpose is to facilitate observation of software behaviour it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key primitives and techniques which enable us to obtain fresh insights.
+**bpftrace** is a language that is specifically designed for tracing user and kernel software. As its primary purpose is to facilitate observation of software behaviour it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key languagaep rimitives and some techniques which enable us to obtain fresh insights.
 
 ## Dynamic Tracing - So What!??
 
@@ -15,7 +15,7 @@ A key attribute of bpftrace is its *dynamic* nature. To understand the myriad co
 
 The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
 
-bpftrace solves these problems by allowing us to trivially dynamically modify the system to capture arbitrary data without modifying any code. As modifying the system is so easy to do we can very quickly iterate through different hypothesis and gain novel insights about systemic behaviour in very short periods of time.
+bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do we can very quickly iterate through different hypothesis and gain novel insights about systemic behaviour in very short periods of time.
 
 ## Action Blocks
 
@@ -54,7 +54,7 @@ Things to note:
 
 **NOTE**: maps are a key data structure that you'll use very frequently!
 
-2 Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls!
+2. Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls!
 
 ```
 # bpftrace -e 'tracepoint:syscalls:sys_enter_futex{@calls[comm] = count();}'
@@ -70,7 +70,7 @@ Attaching 1 probe...
 Things to note:
 
 * We changed are probe specification as we are only interested in futex calls now
-* Instead of indexing by the probe name we now index by the name of the process making the futex syscall using the `comm` builtin.
+* Instead of indexing by the probe name we now index by the name of the process making the futex syscall using the `comm` builtin variable.
 
 1. Next let's see where in the code the `FS_DSSHander_GC` process is calling the `futex` from:
 
@@ -113,9 +113,9 @@ Attaching 1 probe...
 1. finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
 
 
-### pid's, tid's, names
+## pid's, tid's and names
 
-Process ane thread identifiers are something we come across a lot when trying to track behaviour of our code. bpftrace has builtin variables that allow us to refer to these identifiers and are frequently used with associative arrays. It's important to understand exactly what is referred to here especially within Facebook where we have many multi-threaded processes:
+Process and thread identifiers are something we come across a lot when trying to track behaviour of our code. It's important to understand exactly what is referred to here especially within Facebook where we have many multi-threaded processes:
 
 - `pid`: The *process id* is constant for every thread in a process - this is the identifier given to the very first thread in the process and is referred to in Linux as the tgid (Thread Group Id).
 - `tid`: every thread is given a *thread id* to uniquely identify it. This is confusingly referred to in Linux as the threads PID.
@@ -129,17 +129,17 @@ Let's look at the `cppfbagentd` WDB process as an example:
 2. Target a particular tid discovered previously and keep a count of the individual syscalls it makes.
 3. Target this same tid but this time using only the `pid` and `comm` builtin variables.
 
-### Associative arrays and tracking threads
+## Associative arrays and tracking threads
 
-Sometimes we may want to track the behaviour of individual threads within a process and associative arrays are perfect for this. For example, we may want to time how long it took a thread to execute a specific function. As there may be many threads executing this function we need to use something unique to the executing thread to identify it. For example, we can use the `tid` as a key for an associative array to store the time it entered a function:
+Sometimes we may want to track the behaviour of individual threads within a process and associative arrays are perfect for this. For example, we may want to time how long it took a thread to execute a specific function. As there may be many threads simultaneously executing this function we need to use something unique to the executing thread to identify it. For example, we can use the `tid` as a key for an associative array to store the time it entered a function:
 
 ```
-  doit:entry
+  tracepoint:syscalls:sys_enter_write
   {
     @[tid] = nsecs;
   }
 
-  doit:return
+  tracepoint:syscalls:sys_exit_write
   /@[tid]/
   {
     $time_taken = nsecs - @[tid];
@@ -151,25 +151,57 @@ Things to note:
 
 * The 'nsecs' builtin variable gives us nanosecond timestamp
 * The predicate on the return probe ensures this thread has actually been through the entry probe (we could have started tracing whilst this thread was already in this function!).
-* The `$` notation indicates that we have declared a *scratch* variable that only has scope within this action block. Here the variable `$time_taken` stores the time taken in the mythical `doit` function.
+* The `$` notation indicates that we have declared a *scratch* variable that only has scope within this action block. Here the variable `$time_taken` stores the time taken in the mythical `write` syscall.
 
 
 ### Exercise
 
 1. Pick a thread from cppfbagentd and also one of the system calls that it makes. Write a script to time the calls and print the result using `printf`.
-1. Use the `hist()` aggregating funciton to track the range of times taken by this syscall.
+1. Use the `hist()` aggregating function to track the range of times taken by this syscall.
 1. Now add the `max()` and `min()` functions in to track the lowest to highest times.
 1. Can you think of how you might dump the stack of a thread when it hits a new highest time value? Implement it.
 
-### Interval timers, `trunc()` and `clear()`
+## Periodic output
 
 We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
 
 ```
-[root@devvm1362.cln1 ~] bpftrace -e 'interval:s:10{time("%c\n");}'
+# bpftrace -e 'interval:s:10{time("%c\n");}'
 Attaching 1 probe...
 Fri Apr 26 08:26:27 2019
 Fri Apr 26 08:26:37 2019
 Fri Apr 26 08:26:47 2019
 Fri Apr 26 08:26:57 2019
+```
+
+We can use interval timers with the `clear()` actions to periodically display data captured only just that sampling interval. The following script shows the top 5 processes doing the most `exec()` calls:
+
+```
+# cat ./periodic-exec.bt
+tracepoint:syscalls:sys_enter_execve
+{
+  @[comm] = count();
+}
+
+interval:s:5
+{
+  print(@, 5);
+  clear(@);
+  printf("\n");
+}
+
+# bpftrace ./periodic-exec.bt
+Attaching 2 probes...
+@[is_scribe_accep]: 25
+@[cppfbagentd]: 38
+@[env]: 38
+@[timeout]: 42
+@[sh]: 124
+
+@[timeout]: 9
+@[smcwhoami]: 10
+@[env]: 10
+@[chef-client]: 17
+@[sh]: 24
+
 ```
