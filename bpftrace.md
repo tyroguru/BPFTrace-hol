@@ -1,29 +1,29 @@
 ## The bpftrace language
 
-In this lab we will work through some of the key language features of bpftrace that you will need to be familiar with. It is not an exhaustive treatment of the language but just the key concepts. I refer you to the [BPFTrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md) for details on all language features.
+In this lab we will work through some of the key language features of bpftrace. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [BPFTrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md) for details on all language features.
 
-**bpftrace** is a language that is specifically designed for tracing user and kernel software. As its primary purpose is to facilitate observation of software behaviour it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key languagaep rimitives and some techniques which enable us to obtain fresh insights.
+**bpftrace** is a language that is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key languagae primitives and some techniques which enable us to obtain fresh insights.
 
 ## Dynamic Tracing - So What!??
 
-A key attribute of bpftrace is its *dynamic* nature. To understand the myriad complexities and nuances of the execution profile of a modern software stack we tend to go through a cyclical process when reasoning about a systems behaviour (sometimes referred to as the 'Virtuous Circle'):
+A key attribute of bpftrace is its *dynamic* nature. To understand the myriad complexities and nuances of the execution profile of a modern software stack, we tend to go through a cyclical process when reasoning about a systems behaviour (sometimes referred to as the 'Virtuous Circle'):
 
-1. Form a hypothesis based upon our current understanding.
+1. Form a hypothesis based upon our current understanding
 1. Gather data / evidence to prove or disprove our hypothesis
-1. Analyse data.
-1. Rinse and Repeat until satisfaction is achieved.
+1. Analyse data
+1. Repeat until satisfaction is achieved
 
-The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
+The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this, we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
 
-bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do we can very quickly iterate through different hypothesis and gain novel insights about systemic behaviour in very short periods of time.
+bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do, we can very quickly iterate through different hypothesis and gain novel insights about systemic behaviour in very short periods of time.
 
 ## Action Blocks
 
-bpftrace scripts are made up of one or more *Action Blocks*. An action block has 3 parts:
+bpftrace scripts are made up of one or more *Action Blocks*. An action block contains 3 parts:
 
-* **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g., strcmp(3)), an event such as a performance counter overflow event or a periodic timer. The key point here is that this is somewhere where we can collect data.
+* **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g., strcmp(3)), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
 * **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'hhvm' or is the file we are writing to located in `/tmp`.
-* **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace or simply printing the current time to stdout.
+* **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout.
 
 ### Starter Example
 
@@ -75,7 +75,10 @@ Things to note:
 1. The result of this tracing iteration tell us that a process named `FS_DSSHander_GC` is making the most `futex()` calls so we may want to drill down this process to see where in the code these calls are being made from
 
 ```
-# bpftrace -e 'tracepoint:syscalls:sys_enter_futex/comm == "FS_DSSHander_GC"/{@calls[ustack()] = count();}'
+# bpftrace -e 'tracepoint:syscalls:sys_enter_futex /comm == "FS_DSSHander_GC"/
+{
+  @calls[ustack] = count();
+}'
 Attaching 1 probe...
 ^C
 
@@ -104,13 +107,13 @@ Attaching 1 probe...
 ]: 507
 ```
 
-### Exercise
+### Exercises
 
-1. write a script to keep count of the number of system calls each process makes.(hint: use the sum() aggregating function)
-1. expand the above script to display the per-process system call counts every 10 seconds (hint: use an `interval` timer)
-1. add the ability to only display the top 10 per process counts (hint: use the `print` action)
-1. delete all per-process syscall stats every 10 secs (hint: `clear`);
-1. finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
+1. Write a script to keep count of the number of system calls each process makes.(hint: use the sum() aggregating function)
+1. Expand the above script to display the per-process system call counts every 10 seconds (hint: use an `interval` timer)
+1. Add the ability to only display the top 10 per process counts (hint: use the `print` action)
+1. Delete all per-process syscall stats every 10 secs (hint: `clear`);
+1. Finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
 
 
 ## pid's, tid's and names
@@ -149,7 +152,7 @@ Sometimes we may want to track the behaviour of individual threads within a proc
 
 Things to note:
 
-* The 'nsecs' builtin variable gives us nanosecond timestamp
+* The `nsecs` builtin variable gives us nanosecond timestamp
 * The predicate on the return probe ensures this thread has actually been through the entry probe (we could have started tracing whilst this thread was already in this function!).
 * The `$` notation indicates that we have declared a *scratch* variable that only has scope within this action block. Here the variable `$time_taken` stores the time taken in the mythical `write` syscall.
 
@@ -166,7 +169,7 @@ Things to note:
 We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
 
 ```
-# bpftrace -e 'interval:s:10{time("%c\n");}'
+# bpftrace -e 'interval:s:10 { time("%c\n"); }'
 Attaching 1 probe...
 Fri Apr 26 08:26:27 2019
 Fri Apr 26 08:26:37 2019
@@ -177,7 +180,7 @@ Fri Apr 26 08:26:57 2019
 We can use interval timers with the `clear()` actions to periodically display data captured only just that sampling interval. The following script shows the top 5 processes doing the most `exec()` calls:
 
 ```
-# cat ./periodic-exec.bt
+# cat periodic-exec.bt
 tracepoint:syscalls:sys_enter_execve
 {
   @[comm] = count();
@@ -190,7 +193,7 @@ interval:s:5
   printf("\n");
 }
 
-# bpftrace ./periodic-exec.bt
+# bpftrace periodic-exec.bt
 Attaching 2 probes...
 @[is_scribe_accep]: 25
 @[cppfbagentd]: 38
@@ -210,6 +213,6 @@ Note that the `interval` based probes only fire on a single CPU which is what we
 
 ### Exercise
 
-1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 100millisecond `profile` probe (profile:ms:100)  to count  of the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the 'if' statement instead of a predicate (it's not any better here but just provides variation!)
+1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 100 millisecond `profile` probe (profile:ms:100)  to count  of the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
 
-In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Fell free to write that now if you feel adventurous: you will need to access the first argument to the syscall which tstores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on `syscalls`r.
+In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Fell free to write that now if you feel adventurous: you will need to access the first argument to the syscall which stores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on `syscalls`.
