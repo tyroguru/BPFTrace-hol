@@ -15,11 +15,11 @@ Finally, note that the lab is designed to be ran stand alone and without a lectu
 
 1. Get yourself a dev server.
 1. Unless specified differently, all commands will be executed as the `root` user so ensure you have access to that account.
-1. Install the `fb-bpftrace` package:
+1. Install the `fb-bpftrace` package (it should already be on devservers):
 
 ```
 [root@twshared6749.09.cln1 ~]# yum install -q -y fb-bpftrace
-[root@twshared6749.09.cln1 ~]# rpmquery  fb-bpftrace
+[root@twshared6749.09.cln1 ~]# rpmquery fb-bpftrace
 fb-bpftrace-20190308-171433.x86_64
 ```
 
