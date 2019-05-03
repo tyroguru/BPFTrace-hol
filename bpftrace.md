@@ -72,7 +72,7 @@ Things to note:
 * We changed are probe specification as we are only interested in futex calls now
 * Instead of indexing by the probe name we now index by the name of the process making the futex syscall using the `comm` builtin variable.
 
-1. Next let's see where in the code the `FS_DSSHander_GC` process is calling the `futex` from:
+1. The result of this tracing iteration tell us that a process named `FS_DSSHander_GC` is making the most `futex()` calls so we may want to drill down this process to see where in the code these calls are being made from
 
 ```
 # bpftrace -e 'tracepoint:syscalls:sys_enter_futex/comm == "FS_DSSHander_GC"/{@calls[ustack()] = count();}'
@@ -205,3 +205,11 @@ Attaching 2 probes...
 @[sh]: 24
 
 ```
+
+Note that the `interval` based probes only fire on a single CPU which is what we want for a periodic timer. However, if we want to sample activity on all CPU's at a fixed interval period we need to use the `profile` probe.
+
+### Exercise
+
+1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 100millisecond `profile` probe (profile:ms:100)  to count  of the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the 'if' statement instead of a predicate (it's not any better here but just provides variation!)
+
+In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Fell free to write that now if you feel adventurous: you will need to access the first argument to the syscall which tstores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on `syscalls`r.
