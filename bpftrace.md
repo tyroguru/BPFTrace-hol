@@ -52,7 +52,7 @@ Things to note:
 * We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g., `tracepoint:syscalls:sys_enter_futex`).
 * Each entry in a map can have one of a number of pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time we hit the probe and we therefore keep count of the number of times a probe has been hit.
 
-**NOTE**: maps are a key data structure that you'll use very frequently!
+[**NOTE**: maps are a key data structure that you'll use very frequently!]
 
 2. Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls!
 
