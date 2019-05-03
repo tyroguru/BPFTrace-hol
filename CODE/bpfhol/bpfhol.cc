@@ -153,8 +153,7 @@ int main(int argc, char *argv[])
   }
   else
   {
-      std::cout << "Environment variable BPFHOL_BASEDIR is unset. Exiting." << std::endl;
-      exit(1);
+      BASEDIR = "./load_generators";
   }
 
   if ((ret = chdir(BASEDIR.c_str())) == -1)
