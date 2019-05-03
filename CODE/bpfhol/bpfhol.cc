@@ -14,7 +14,7 @@
  * quickly. If this is published anywhere I will rewrite it in an OO style.
  */
 
-std::string options = "1. syscalls\n2. kprobes\n3. usdt\n9. exit\n\nSelect Option: ";
+std::string options = "1. syscalls\n2. kprobes\n3. usdt\n4. uprobes\n9. exit\n\nSelect Option: ";
 std::vector<pid_t> allpids;
 std::string BASEDIR;
 
@@ -60,6 +60,16 @@ void syscalls()
 void kprobes()
 {
   std::string progs[] = { "kprobes/kprobeme" };
+
+  for (auto prog : progs )
+  {
+    execute(prog);
+  }
+}
+
+void uprobes()
+{
+  std::string progs[] = { "uprobes/uprobeme" };
 
   for (auto prog : progs )
   {
@@ -169,6 +179,10 @@ int main(int argc, char *argv[])
 
         case 3: terminate();
                 usdt();
+                break;
+
+        case 4: terminate();
+                uprobes();
                 break;
 
         case 9:
