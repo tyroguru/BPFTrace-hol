@@ -34,4 +34,3 @@ fb-bpftrace-20190308-171433.x86_64
 1. [Working with dynamic user probes](uprobe.md)
 1. [Working with static user probes](usdt.md)
 1. [Working with performance counters](perfcnt.md)
----

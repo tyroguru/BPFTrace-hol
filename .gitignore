@@ -1,4 +1,6 @@
 _build/
+bpftrace-hol/
+bpftrace-hol.tar.gz
 bpfhol
 closeall
 mapit
