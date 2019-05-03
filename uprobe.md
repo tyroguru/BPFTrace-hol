@@ -45,7 +45,10 @@ to the return value in the reserved keyword `retval`.
 
 Run on your devserver:
 ```
-$ sudo bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit { printf("%s exited with code %d\n", comm, arg0); }'
+$ sudo bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
+{
+    printf("%s exited with code %d\n", comm, arg0);
+}'
 ```
 
 There might be a lot of output, but if you open an extra shell and run
