@@ -1,11 +1,11 @@
 ## System Call Tracing
 
-In this lab you will experiment with tracing system call interfaces. As this is the primary mechanism with which a process interacts with the kernel it can often be of interest when investigating systemic and/or application behavior.
+In this lab you will experiment with tracing system call interfaces. As this is the primary mechanism with which a process interacts with the kernel, it can often be of interest when investigating systemic and/or application behavior.
 
 The number of system calls may vary from kernel to kernel and we can see which exist on our system with `bpftrace -l`:
 
 ```
-# bpftrace -l tracepoint:syscalls:sys_enter*
+# bpftrace -l 'tracepoint:syscalls:sys_enter*'
 tracepoint:syscalls:sys_enter_socket
 tracepoint:syscalls:sys_enter_socketpair
 tracepoint:syscalls:sys_enter_bind
@@ -23,8 +23,8 @@ You should have in excess of 300 system calls to choose from!
 Each syscall has two distinct probes: an **enter** probe which is fired when a system call is called and an **exit** probe which is fired on return from a system call. The format of the two different types of syscall probe are:
 
 ```
-tracepoint:syscalls:sys_enter_{syscall_name}
-tracepoint:syscalls:sys_exit_{syscall_name}
+tracepoint:syscalls:sys_enter_<syscall_name>
+tracepoint:syscalls:sys_exit_<syscall_name>
 ```
 
 For example, the `open(2)` system call probes are:
@@ -42,7 +42,7 @@ tracepoint:syscalls:sys_exit_open
 
 #### Entry probes
 
-The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for write(2) the syscall has 3 arguments: `fd`, `buf` and `count`and we can verify that with the `-lv` options to `bpftrace`.
+The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for write(2), the syscall has 3 arguments: `int fd`, `void* buf` and `size_t count`. We can verify that with the `-lv` options to `bpftrace`:
 
 ```
 [root@twshared6749.09.cln1 ~]# bpftrace -lv t:syscalls:sys_enter_write
@@ -53,11 +53,11 @@ tracepoint:syscalls:sys_enter_write
     size_t count;
 ```
 
-[NOTE: We've used the abbreviated name for `tracepoint` above - simply `t`!]
+[**NOTE**: We've used the abbreviated name for `tracepoint` above - simply `t`!]
 
-Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. This is really just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in the "Further Reading section"??)
+Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. This is really just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
 
-To access an argument we reference it through the `args` array using its name, i.e., `args->buf`. In the following example we capture the first 200 bytes (or less) of any buffer being sent to file descriptor 2 which is usually `stderr`
+To access an argument, we reference it through the `args` built-in using its name, e.g., `args->buf`. In the following example we capture the first 200 bytes (or less) of any buffer being sent to file descriptor 2 which is usually `stderr`
 
 ```
 # cat write.bt
@@ -89,12 +89,12 @@ A few things to note from the above example:
 
 - Owing to a current architectural limit in BPF, BPFTrace restricts strings to be 64 bytes by default. We can increase these using the `BPFTRACE_STRLEN` environment variable to a maximum of 200 bytes.
 - `char *`'s must be explicitly converted to strings using the `str()` builtin.
-- The 'comm' builtin gives us the name of the process doing the write call.
+- The `comm` builtin gives us the name of the process doing the write call.
 - The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very simple modification!).
 
 #### Return probes
 
-As with any C function we only have a single return code from a syscall. As an exercise, compare the return codes specified in the man pages with the output of `bpftrace -lv` for the following syscalls exit probes:
+As with any C function, we only have a single return value from a syscall. As an exercise, compare the return codes specified in the man pages with the output of `bpftrace -lv` for the following syscalls exit probes:
 
 - `close`
 - `mmap`
@@ -130,7 +130,5 @@ NOTE: before attempting the tasks in this section select the `syscalls` option f
 
 ## Further Reading
 
-Each section should have some more advanced reading for those that are interested. It shouldn't be necessary to know this stuff but it may be useful for those who abolutely need to have more information to be able to use something.
-
+* https://www.kernel.org/doc/html/latest/process/adding-syscalls.html
 - How are syscall probes instrumented?
-
