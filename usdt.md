@@ -34,7 +34,7 @@ usdt:/usr/local/bin/dynolog:thrift:thrift_context_stack_user_exception_wrapped
 usdt:/usr/local/bin/dynolog:thrift:thrift_context_stack_async_complete
 ```
 
-*NOTE: change the above example to bot grep when dale fixes that *
+[**NOTE**: change the above example to not grep when dale fixes that]
 
 Using `bpftrace` on an executable or library:
 
@@ -56,13 +56,13 @@ usdt:/lib64/libc-2.17.so:libc:memory_arena_reuse
 The format of a USDT probe is:
 
 ```
-usdt:binary_or_library_path:[probe_namespace]:probe_name
+usdt:<binary_or_library_path>:[<probe_namespace>]:<probe_name>
 ```
 
 Where:
 
 * `usdt`: Provider name (currently fixed at *usdt*)
-* `binary_or_library_path:` If an absolute path is specified then that will be used or the users $PATH will be searched.
+* `binary_or_library_path:` If an absolute path is specified then that will be used. Otherwise, the users $PATH will be searched.
 * `[probe_namespace]:` optional and will default to the basename of the binary or library path.
 * `probe_name:` name of the probe
 
@@ -85,11 +85,11 @@ libpthread:pthread_create [sema 0x0]
 <chop>
 ```
 
-(*NOTE:* The number of arguments can also be discovered using `readelf -n` but the information isn't pretty printed as nicely. Give it a go!)
+[**NOTE**: The number of arguments can also be discovered using `readelf -n` but the information isn't pretty printed as nicely. Give it a go!]
 
-The output from `tplist.py` given above raises an important point about USDT probes: a single probe can be located at multiple places in a code base. For example, if some code has multiple locations where a transaction can be inititiated we may want to define a single probe for this operation, `transaction-start` for example, and we would need to place this probe at each of these call sites. When we subsequently enable the `transaction-start` probe the bpf subsystem would ensure that all locations where this probe is defined are instrumented.
+The output from `tplist.py` given above raises an important feature of USDT probes: a single probe can be located at multiple places in a code base. For example, if some code has multiple locations where a transaction can be initiated, we may want to define a single probe for this operation, `transaction-start` for example, and we would need to place this probe at each of these call sites. When we subsequently enable the `transaction-start` probe the perf subsystem would ensure that all locations where this probe is defined are instrumented.
 
-In the tplist.py example above we can see that the `libpthread:lll_futex_wake` probe has been inserted at 12 different locations! We can use our good friend gdb to tell us exactly where:
+In the `tplist.py` example above we can see that the `libpthread:lll_futex_wake` probe has been inserted at 12 different locations! We can use our good friend gdb to tell us exactly where:
 
 ```
 (gdb) info probes stap libpthread lll_futex_wake
@@ -276,7 +276,7 @@ I have taken the baic thrift example and added a probe to it. They would need to
 
 ## Instrumentation Methodology
 
-When a DTRACE_PROBE/STAP_PROBE macro is used to insert a probe into code we end up with a sequence of instructions to setup arguments for the probe follwed by a 'nop' instruction. The 'nop' instruction is the single byte variant and this is a placeholder for where to patch when the probe is enabled (remember the point of the instrumentation is to vector us off into the kernel so that we can enter into the BPF VM).
+When a DTRACE_PROBE/STAP_PROBE macro is used to insert a probe into code we end up with a sequence of instructions to setup arguments for the probe followed by a `nop` instruction. The `nop` instruction is the single byte variant and this is a placeholder for where to patch when the probe is enabled (remember the point of the instrumentation is to vector us off into the kernel so that we can enter into the BPF VM).
 
 Take this extremely simple example of a probe with a single argument:
 
