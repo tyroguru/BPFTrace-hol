@@ -15,7 +15,7 @@ A key attribute of bpftrace is its *dynamic* nature. To understand the myriad co
 
 The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this, we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
 
-bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do, we can very quickly iterate through different hypothesis and gain novel insights about systemic behaviour in very short periods of time.
+bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do, we can very quickly iterate through different hypotheses and gain novel insights about systemic behaviour in very short periods of time.
 
 ## Action Blocks
 
@@ -27,7 +27,7 @@ bpftrace scripts are made up of one or more *Action Blocks*. An action block con
 
 ### Starter Example
 
-We'll start with the classic example of looking at system calls (see the [syscalls lab](syscalls.md) for further details).
+We'll start with the classic example of looking at system calls (see the [syscalls lab](syscalls.pdf) for further details).
 
 1. First let's see what system calls are being made:
 
@@ -128,13 +128,13 @@ Process and thread identifiers are something we come across a lot when trying to
 
 Let's look at the `cppfbagentd` WDB process as an example:
 
-1. Count the syscalls made by each <pid, tid> pair for every thread in the cppfbagentd process.
+1. Count the syscalls made by each `<pid, tid>` pair for every thread in the cppfbagentd process.
 2. Target a particular tid discovered previously and keep a count of the individual syscalls it makes.
 3. Target this same tid but this time using only the `pid` and `comm` builtin variables.
 
 ## Associative arrays and tracking threads
 
-Sometimes we may want to track the behaviour of individual threads within a process and associative arrays are perfect for this. For example, we may want to time how long it took a thread to execute a specific function. As there may be many threads simultaneously executing this function we need to use something unique to the executing thread to identify it. For example, we can use the `tid` as a key for an associative array to store the time it entered a function:
+Sometimes we may want to track the behaviour of individual threads within a process and associative arrays are perfect for this. For example, we may want to time how long it took a thread to execute a specific function. As there may be many threads simultaneously executing this function we need to use something unique to the executing thread to identify it. We can use the `tid` as a key for an associative array to store a timestamp of when we enter a function. Here we time how long it takes a thread to execute a write() syscall:
 
 ```
   tracepoint:syscalls:sys_enter_write
@@ -154,7 +154,7 @@ Things to note:
 
 * The `nsecs` builtin variable gives us nanosecond timestamp
 * The predicate on the return probe ensures this thread has actually been through the entry probe (we could have started tracing whilst this thread was already in this function!).
-* The `$` notation indicates that we have declared a *scratch* variable that only has scope within this action block. Here the variable `$time_taken` stores the time taken in the mythical `write` syscall.
+* The `$` notation indicates that we have declared a *scratch* variable that only has scope within this action block. Here the variable `$time_taken` stores the time taken in the write() syscall.
 
 
 ### Exercise
@@ -213,6 +213,6 @@ Note that the `interval` based probes only fire on a single CPU which is what we
 
 ### Exercise
 
-1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 100 millisecond `profile` probe (profile:ms:100)  to count  of the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
+1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 100 millisecond `profile` probe (profile:ms:100)  to count the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
 
-In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Fell free to write that now if you feel adventurous: you will need to access the first argument to the syscall which stores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on `syscalls`.
+In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Fell free to write that now if you feel adventurous: you will need to access the first argument to the syscall which stores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on [syscalls](syscalls.pdf).

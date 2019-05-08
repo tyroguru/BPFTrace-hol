@@ -2,11 +2,11 @@
 
 In this lab you will experiment with probing dynamic *u*ser probes. *Dynamic*
 probes are probes that are not *statically* defined apriori in code (eg [USDT
-probes](usdt.md)). Dynamic probes are discovered on-demand by the kernel uprobe
+probes](usdt.pdf)). Dynamic probes are discovered on-demand by the kernel uprobe
 subsystem. For userland applications and libraries, a point of instrumentation
 is called a `uprobe`.
 
-The `uprobe` is similar to [kprobe's](kprobe.md), When a `uprobe` is armed, the
+The `uprobe` is similar to [kprobe's](kprobe.pdf), When a `uprobe` is armed, the
 kernel will dynamically replace the target address with an `INT3` (0xCC) instruction.
 The original instruction is saved into a special part of the process address
 space and will later be single stepped there. Eventually if the breakpoint (`INT3`)
@@ -26,7 +26,7 @@ interface looks extremely similar to `kprobe`.
 ### Attaching to a uprobe
 
 ```
-$ sudo bpftrace -e 'uprobe:<library_name>:<function_name> { ... }'
+$ bpftrace -e 'uprobe:<library_name>:<function_name> { ... }'
 ```
 
 Note the extra `<library_name>` between `uprobe` and `<function_name>`. It is
@@ -45,7 +45,7 @@ to the return value in the reserved keyword `retval`.
 
 Run on your devserver:
 ```
-$ sudo bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
+$ bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
 {
     printf("%s exited with code %d\n", comm, arg0);
 }'
@@ -150,7 +150,7 @@ The resulting data (in nanoseconds) should be printed to the console.
 
 Let's see what happens when we run the script for ~30 seconds:
 ```
-$ sudo bpftrace process_lifetime.bt
+$ bpftrace process_lifetime.bt
 Attaching 3 probes...
 ^C
 

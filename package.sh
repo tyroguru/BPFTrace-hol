@@ -23,7 +23,7 @@ rm -r "$BUILD_DIR"/load_generators/bpfhol
 
 # Build docs
 for doc in *.md; do
-  pandoc "$doc" -f gfm -o "$BUILD_DIR"/$(basename "$doc" .md).pdf -V urlcolor=blue
+  pandoc "$doc" --latex-engine=xelatex -f markdown -o "$BUILD_DIR"/$(basename "$doc" .md).pdf -V urlcolor=blue
 done
 
 # Tarball the results
