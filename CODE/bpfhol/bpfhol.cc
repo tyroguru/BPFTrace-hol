@@ -14,7 +14,7 @@
  * quickly. If this is published anywhere I will rewrite it in an OO style.
  */
 
-std::string options = "1. syscalls\n2. kprobes\n3. usdt\n4. uprobes\n9. exit\n\nSelect Option: ";
+std::string options = "1. syscalls\n2. kprobes\n3. usdt\n4. uprobes\n8. stop current generator\n9. exit\n\nSelect Option: ";
 std::vector<pid_t> allpids;
 std::string BASEDIR;
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
   while (1)
   {
     std::cout << options;
-    std::getline(std::cin, choice);
+    std::cin >> choice;
 
     switch (std::stoi(choice)) {
         case 1: terminate();
@@ -182,6 +182,10 @@ int main(int argc, char *argv[])
 
         case 4: terminate();
                 uprobes();
+                break;
+
+        case 8:
+                terminate();
                 break;
 
         case 9:
