@@ -18,11 +18,48 @@ Finally, note that the lab is designed to be ran stand alone and without a lectu
 1. Install the `fb-bpftrace` package (it should already be on devservers):
 
 ```
-[root@twshared6749.09.cln1 ~]# yum install -q -y fb-bpftrace
-[root@twshared6749.09.cln1 ~]# rpmquery fb-bpftrace
+# yum install -q -y fb-bpftrace
+# rpmquery fb-bpftrace
 fb-bpftrace-20190308-171433.x86_64
 ```
 
+1. Copy `bpftrace-hol.tar.gz` to your dev server.
+
+```
+# cp /path/to/*.gz .
+```
+
+1. Upack the archive:
+
+```
+# tar zxvf bpftrace-hol.tar.gz
+bpftrace-hol/
+bpftrace-hol/load_generators/
+bpftrace-hol/load_generators/kprobes/
+bpftrace-hol/load_generators/kprobes/kprobeme
+bpftrace-hol/load_generators/syscalls/
+bpftrace-hol/load_generators/syscalls/closeall
+bpftrace-hol/load_generators/syscalls/tempfiles
+bpftrace-hol/load_generators/syscalls/mapit
+bpftrace-hol/load_generators/uprobes/
+bpftrace-hol/load_generators/uprobes/uprobeme
+bpftrace-hol/load_generators/usdt/
+bpftrace-hol/load_generators/usdt/thrift/
+bpftrace-hol/load_generators/usdt/thrift/cpp2/
+bpftrace-hol/load_generators/usdt/thrift/if/
+bpftrace-hol/load_generators/usdt/usdt-passwd
+bpftrace-hol/load_generators/utils/
+bpftrace-hol/load_generators/utils/allprobes.py
+bpftrace-hol/bpfhol
+bpftrace-hol/bpftrace.pdf
+bpftrace-hol/kprobe.pdf
+bpftrace-hol/README.pdf
+bpftrace-hol/syscalls.pdf
+bpftrace-hol/uprobe.pdf
+bpftrace-hol/usdt.pdf
+```
+
+1. You're good to go!
 
 ---
 

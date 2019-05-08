@@ -209,6 +209,8 @@ NOTE: before attempting task 2 in this section, select the `uprobes` option from
 1. `uprobeme` has two functions, `void foo(void)` and `void bar(void)`. How often
    are they called?
 
+
+Now we've seen dynamic user probes we move on to [user static probes](usdt.pdf).
 ---
 
 ## Further Reading

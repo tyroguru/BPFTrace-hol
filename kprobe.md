@@ -168,6 +168,9 @@ NOTE: before attempting the tasks in this section select the `kprobes` option fr
 1. Is `kprobeme` opening a new file descriptor every time?
 1. Is `kprobeme` leaking file descriptors? (HINT: use an associative map)
 
+
+After this excursion in to the kernel we're going back up into userland with [uprobes](uprobe.pdf).
+
 ---
 ## Further Reading
 
