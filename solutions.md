@@ -119,6 +119,7 @@ tracepoint:syscalls:sys_enter_*
 
 1. Pick a thread from cppfbagentd and also one of the system calls that it makes. Write a script to time the calls and print the result using `printf`.
 
+```
 t:syscalls:sys_enter_write
 /tid == $1/
 {
@@ -131,12 +132,13 @@ t:syscalls:sys_exit_write
         printf("time taken for write: %lld nsecs\n", nsecs - @ts[tid]);
         @[tid] = 0;
 }
-
+```
 
 1. Use the `hist()` aggregating function to track the range of times taken by this syscall.
 
 The is the same as the solution above but with the printf() replaced:
 
+```
 t:syscalls:sys_enter_write
 /tid == 1414349/
 {
@@ -149,10 +151,12 @@ t:syscalls:sys_exit_write
         @histwrite[probe] = hist(nsecs - @ts[tid]);
         @[tid] = 0;
 }
+```
 
 
 1. Now add the `max()` and `min()` functions in to track the lowest to highest times.
 
+```
 t:syscalls:sys_enter_write
 /tid == 1414349/
 {
@@ -168,10 +172,11 @@ t:syscalls:sys_exit_write
         @minwrite[probe] = min($ts);
         @[tid] = 0;
 }
-
+```
 
 1. Can you think of how you might dump the stack of a thread when it hits a new highest time value? Implement it.
 
+```
 BEGIN
 {
         @curmaxval[tid] = 0;
@@ -202,10 +207,12 @@ t:syscalls:sys_exit_write
         @minwrite[probe] = min($ts);
         @[tid] = 0;
 }
+```
 
 
 1. Write a script which uses a 10 millisecond `profile` probe (profile:ms:10)  to count the number of times a non-root thread (uid != 0) was running.
 
+```
 profile:ms:10
 {
   if (uid != 0)
@@ -213,3 +220,4 @@ profile:ms:10
     @[cpu, comm]++;
   }
 }
+```
