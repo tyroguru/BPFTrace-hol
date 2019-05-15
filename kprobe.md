@@ -2,7 +2,7 @@
 
 In this lab you will experiment with tracing kernel probes. `kprobes`, short
 for *k*ernel probes, are dynamically instrumented probes that do not have overhead
-at disabled and minimal overhead when enabled. The details of the implementation
+when disabled and minimal overhead when enabled. The details of the implementation
 are a bit hairy, but the overall concept is rather straight forward: when a `kprobe`
 is enabled, the kernel dynamically inserts an `INT3` instruction at the specified
 address. The original instruction is saved and later single stepped.
@@ -43,7 +43,23 @@ Some things to be wary of:
 ### kprobe/kretprobe and their arguments
 
 A key feature of `kprobe`s is that we get access to the arguments via reserved
-keywords `arg0`, `arg1`, `...`,  `argN`.
+keywords `arg0`, `arg1`, `...`,  `argN`. For example, the kernel function `vfs_write` is defined as:
+
+```
+ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
+```
+
+and therefore the arguments are available to us as:
+
+```
+  arg0 - struct file*
+  arg1 - const char*
+  arg2 - ssize_t count
+  arg3 - loff_t *pos
+```
+
+However, a big caveat with accessing parameters is that the Linux kernel doesn't currently have any type information exposed to BPF that bpftrace can use. Therefore we mst `#include` the appropriate header files to access the required defintions. For example, to access a `file*` typed argument we need to `#include linux/fs.h> to obatin the structure definition. This should hopefully be fixed in the longer term with the [BTF project](https://facebookmicrosites.github.io/bpf/blog/2018/11/14/btf-enhancement.html) which aims to put type information in the kernel that is always accessible.
+
 
 Although not listed in `bpftrace -l`, every `kprobe` has a corresponding `kretprobe`.
 `kretprobes` are exactly the same as `kprobe`s with the difference being `kretprobe`s
@@ -67,7 +83,7 @@ static u16 cgroup_control(struct cgroup *cgrp)
 Now check `bpftrace -l`:
 
 ```
-$ sudo bpftrace -l | grep cgroup_control
+# bpftrace -l | grep cgroup_control
 kprobe:cgroup_control
 kprobe:cgroup_controllers_show
 ```
@@ -86,7 +102,7 @@ kprobe:cgroup_file_open
   }
 }
 
-$ sudo bpftrace cgroup2.bt
+# bpftrace cgroup2.bt
 Attaching 1 probe...
 cgroup2 magic detected
 cgroup2 magic detected
@@ -101,7 +117,7 @@ cgroup2 magic detected
 
 First install the dwarves tools:
 ```
-$ sudo yum install dwarves
+# yum install dwarves
 ```
 
 In the previous exercise, we reached deep inside a bunch of structs. It might seem

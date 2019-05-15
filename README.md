@@ -13,25 +13,30 @@ Finally, note that the lab is designed to be ran stand alone and without a lectu
 
 ### Prerequisites
 
-1. Get yourself a dev server.
+1. Currently this lab can only be ran on a Facebook devserver so make sure you've bought yours to the party.
 1. Unless specified differently, all commands will be executed as the `root` user so ensure you have access to that account.
-1. Install the `fb-bpftrace` package (it should already be on devservers):
+1.The 'fb-bpftrace' package should already be installed on your devserver. To verify this execute the following command:
+
+```
+# rpmquery fb-bpftrace
+```
+
+If the above `rpmquery` command returns `package fb-bpftrace is not installed` then manually install the package:
 
 ```
 # yum install -q -y fb-bpftrace
-# rpmquery fb-bpftrace
-fb-bpftrace-20190308-171433.x86_64
 ```
 
-1. Copy `bpftrace-hol.tar.gz` to your dev server.
+1. Copy `bpftrace-hol.tar.gz` to your dev server. To copy the compressed archive from your laptop to your devserver:
 
 ```
-# cp /path/to/*.gz .
+scp bpftrace-hol.tar.gz <unixname>@<hostname>:/home/<unixname>
 ```
 
 1. Upack the archive:
 
 ```
+# cd ~
 # tar zxvf bpftrace-hol.tar.gz
 bpftrace-hol/
 bpftrace-hol/load_generators/
@@ -57,11 +62,28 @@ bpftrace-hol/README.pdf
 bpftrace-hol/syscalls.pdf
 bpftrace-hol/uprobe.pdf
 bpftrace-hol/usdt.pdf
+
+# cd bpftrace-hol
 ```
 
 1. You're good to go!
 
+*NOTE:*  a number of exercises in the lab will make use of the `bpfhol` binary that is located at the top level directory of the `bpftrace-hol` package install. Its purpose if to run load generators in the background that aid in demostrating features of the bpftrace language. When executed, the `bpfhol` binary presents the following menu:
+
+```
+1. syscalls
+2. kprobes
+3. usdt
+4. uprobes
+8. stop current generator
+9. exit
+```
+
+Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes etc. .If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all exisiting load generators that may be running.
+
 ---
+
+Also, some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generallyexpected that you will look up the language feature in the [online reference guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md).
 
 ### Labs
 
@@ -71,3 +93,4 @@ bpftrace-hol/usdt.pdf
 1. [Working with dynamic user probes](uprobe.pdf)
 1. [Working with static user probes](usdt.pdf)
 1. [Working with performance counters](perfcnt.pdf)
+1. [Solutions to lab exercises](solutions.pdf)

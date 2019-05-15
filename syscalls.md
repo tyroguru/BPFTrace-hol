@@ -102,8 +102,6 @@ As with any C function, we only have a single return value from a syscall. As an
 
 As you can see, the types don't agree as bpftrace always reports the return type as 'long' which is an 8 byte quantity. We may need to cast the return value accordingly to the correct return type as specified by the man page.
 
-[ XXX On an error the errno appears to be returned and not -1 - explain that and expand ]
-
 ### Raw vs "Normal" syscalls
 ---
 
@@ -127,10 +125,9 @@ NOTE: before attempting the tasks in this section select the `syscalls` option f
 
 1. Find all close() calls on invalid file descriptors.
 
-In the next section we take a dive into the kernel for [kprobes](kprobes.pdf).
+In the next section we take a dive into the kernel for [kprobes](kprobe.pdf).
 
 
 ## Further Reading
 
-* https://www.kernel.org/doc/html/latest/process/adding-syscalls.html
-- How are syscall probes instrumented?
+* [https://www.kernel.org/doc/html/latest/process/adding-syscalls.html](Adding a New System Call)

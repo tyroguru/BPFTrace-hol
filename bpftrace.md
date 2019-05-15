@@ -6,7 +6,7 @@ In this lab we will work through some of the key language features of bpftrace. 
 
 ## Dynamic Tracing - So What!??
 
-A key attribute of bpftrace is its *dynamic* nature. To understand the myriad complexities and nuances of the execution profile of a modern software stack, we tend to go through a cyclical process when reasoning about a systems behaviour (sometimes referred to as the 'Virtuous Circle'):
+A key attribute of bpftrace is its *dynamic* nature. To understand the myriad complexities and nuances of the execution profile of a modern software stack, we tend to go through a cyclical process when reasoning about systemic behaviour (sometimes referred to as the 'Virtuous Circle'):
 
 1. Form a hypothesis based upon our current understanding
 1. Gather data / evidence to prove or disprove our hypothesis
@@ -19,17 +19,29 @@ bpftrace solves these problems by allowing us to dynamically modify our system t
 
 ## Action Blocks
 
-bpftrace scripts are made up of one or more *Action Blocks*. An action block contains 3 parts:
+bpftrace scripts are made up of one or more *Action Blocks*. An action block contains 3 parts in the following order:
 
 * **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g., strcmp(3)), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
-* **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'hhvm' or is the file we are writing to located in `/tmp`.
-* **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout.
+* **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'hhvm' or is the file we are writing to located in `/tmp`. Predicates are contained in between two forward slash characters.
+* **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout. Actions are contained in between curly braces.
+
+An example action block looks like this:
+
+```
+tracepoint:syscalls:sys_enter_write   /* The probe */
+/comm == "hhvm"/                      /* The predicate */
+{
+  @[args->fd] = sum(args->count);     
+}
+```
+
+Exercise: Although we haven't been formally introduced to any bpftrace details, can you guess what the above action block does?
 
 ### Starter Example
 
 We'll start with the classic example of looking at system calls (see the [syscalls lab](syscalls.pdf) for further details).
 
-1. First let's see what system calls are being made:
+1. First let's see what system calls are being made. Run this bpftrace invocation for 15-20 seconds.
 
 ```
 # bpftrace -e 'tracepoint:syscalls:sys_enter_*{@calls[probe] = count();}'
@@ -52,9 +64,11 @@ Things to note:
 * We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g., `tracepoint:syscalls:sys_enter_futex`).
 * Each entry in a map can have one of a number of pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time we hit the probe and we therefore keep count of the number of times a probe has been hit.
 
-[**NOTE**: maps are a key data structure that you'll use very frequently!]
+**IMPORTANT NOTE:** If you're running these examples on your devserver (we hope you are!) the order and number of system calls you see may well be different to the output given above. For the sake of this example we will focus on futex(2) calls.
 
-2. Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls!
+[**NOTE:** maps are a key data structure that you'll use very frequently!]
+
+2. Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls! Again, let's give it 15-20 seconds before issuing a `<ctrl-c>`:
 
 ```
 # bpftrace -e 'tracepoint:syscalls:sys_enter_futex{@calls[comm] = count();}'
@@ -69,7 +83,7 @@ Attaching 1 probe...
 
 Things to note:
 
-* We changed are probe specification as we are only interested in futex calls now
+* We changed the probe specification as we are only interested in futex calls now
 * Instead of indexing by the probe name we now index by the name of the process making the futex syscall using the `comm` builtin variable.
 
 1. The result of this tracing iteration tell us that a process named `FS_DSSHander_GC` is making the most `futex()` calls so we may want to drill down this process to see where in the code these calls are being made from
@@ -109,10 +123,25 @@ Attaching 1 probe...
 
 ### Exercises
 
-1. Write a script to keep count of the number of system calls each process makes.(hint: use the sum() aggregating function)
-1. Expand the above script to display the per-process system call counts every 10 seconds (hint: use an `interval` timer)
+1. Write a script to keep count of the number of system calls each process makes. (In addition to count(), try using the sum() aggregating function and/or the `++` increment operator).
+
+1. Next we will expand the above script to display the per-process system call counts every 10 seconds but first we will quickly look at periodic timers.
+
+We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
+
+```
+# bpftrace -e 'interval:s:10 { time("%c\n"); }'
+Attaching 1 probe...
+Fri Apr 26 08:26:27 2019
+Fri Apr 26 08:26:37 2019
+Fri Apr 26 08:26:47 2019
+Fri Apr 26 08:26:57 2019
+```
+
+Now expnd the script written previously to print the per-process system call counts every 10 seconds.
+
 1. Add the ability to only display the top 10 per process counts (hint: use the `print` action)
-1. Delete all per-process syscall stats every 10 secs (hint: `clear`);
+1. Delete all per-process syscall stats every 10 secs (hint: use the `clear` action);
 1. Finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
 
 
@@ -128,9 +157,8 @@ Process and thread identifiers are something we come across a lot when trying to
 
 Let's look at the `cppfbagentd` WDB process as an example:
 
-1. Count the syscalls made by each `<pid, tid>` pair for every thread in the cppfbagentd process.
+1. Count the syscalls made by each `<pid, tid, comm>` tuple for every thread in the main cppfbagentd process (use `pgrep -f cppfbagentd` to find the main process pid and predicate using that),
 2. Target a particular tid discovered previously and keep a count of the individual syscalls it makes.
-3. Target this same tid but this time using only the `pid` and `comm` builtin variables.
 
 ## Associative arrays and tracking threads
 
@@ -164,55 +192,10 @@ Things to note:
 1. Now add the `max()` and `min()` functions in to track the lowest to highest times.
 1. Can you think of how you might dump the stack of a thread when it hits a new highest time value? Implement it.
 
-## Periodic output
-
-We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
-
-```
-# bpftrace -e 'interval:s:10 { time("%c\n"); }'
-Attaching 1 probe...
-Fri Apr 26 08:26:27 2019
-Fri Apr 26 08:26:37 2019
-Fri Apr 26 08:26:47 2019
-Fri Apr 26 08:26:57 2019
-```
-
-We can use interval timers with the `clear()` actions to periodically display data captured only just that sampling interval. The following script shows the top 5 processes doing the most `exec()` calls:
-
-```
-# cat periodic-exec.bt
-tracepoint:syscalls:sys_enter_execve
-{
-  @[comm] = count();
-}
-
-interval:s:5
-{
-  print(@, 5);
-  clear(@);
-  printf("\n");
-}
-
-# bpftrace periodic-exec.bt
-Attaching 2 probes...
-@[is_scribe_accep]: 25
-@[cppfbagentd]: 38
-@[env]: 38
-@[timeout]: 42
-@[sh]: 124
-
-@[timeout]: 9
-@[smcwhoami]: 10
-@[env]: 10
-@[chef-client]: 17
-@[sh]: 24
-
-```
-
-Note that the `interval` based probes only fire on a single CPU which is what we want for a periodic timer. However, if we want to sample activity on all CPU's at a fixed interval period we need to use the `profile` probe.
+Note that the `interval` based probes we have used previously only fire on a single CPU which is what we want for a periodic timer. However, if we want to sample activity on all CPU's at a fixed interval period we need to use the `profile` probe.
 
 ### Exercise
 
-1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 100 millisecond `profile` probe (profile:ms:100)  to count the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
+1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 10 millisecond `profile` probe (profile:ms:10)  to count the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
 
-In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Fell free to write that now if you feel adventurous: you will need to access the first argument to the syscall which stores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on [syscalls](syscalls.pdf).
+In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Feel free to write that now if you feel adventurous: you will need to access the first argument to the syscall which stores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on [syscalls](syscalls.pdf).

@@ -127,7 +127,7 @@ Facebook developers should use Folly to declare static USDT probes. To declare a
 
 Yes, it's just one macro regardless of the number of arguments! Simply `#include <folly/tracing/StaticTracepoint.h>` and in your buck TARGETS file include a dependency for `//folly/tracing:static_tracepoint`.
 
-A quick example from the hiphop web server code (`hphp/runtime/vm/runtime.cpp`). Several functions are defined to concatonate strings, each taking a different number of strings as arguments. Each function exports the `hhvm:hhvm_cow_concat` probe which exports two integer arguments. For example, from `concat_s3()`:
+A quick example from the hiphop web server code (`hphp/runtime/vm/runtime.cpp`). Several functions are defined to concatenate strings, each taking a different number of strings as arguments. Each function exports the `hhvm:hhvm_cow_concat` probe which exports two integer arguments. For example, from `concat_s3()`:
 
 ```
     FOLLY_SDT(hhvm, hhvm_cow_concat, s1.size(), s2.size() + s3.size());
@@ -184,7 +184,7 @@ So, a trivial example would to use the `mapper:large_map` probe in this way woul
 
 ### Additional Facebook related note:
 
-If an application has been converted to use large pages for its text region then this causes USDT probes (and uprobes) to not work (see task T22479091). The only workaround for this at the minute is to explictly exclude functions that contain USDT probes from being include in the large page relocation process. We do this by using the `NEVER_HUGIFY()` macro to specifiy that a function should never be relocated to a large page. Obviously you will need to consider whether you want to sacrific performance for observability here.
+If an application has been converted to use large pages for its text region then this causes USDT probes (and uprobes) to not work (see task T22479091). The only workaround for this at the minute is to explictly exclude functions that contain USDT probes from being included in the large page relocation process. We do this by using the `NEVER_HUGIFY()` macro to specifiy that a function should never be relocated to a large page. Obviously you will need to consider whether you want to sacrific performance for observability here.
 
 
 ### Non-Folly way (External to Facebook!)
