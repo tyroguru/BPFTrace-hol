@@ -1,7 +1,7 @@
 ## Dynamic User Probes
 
 In this lab you will experiment with probing dynamic *u*ser probes. *Dynamic*
-probes are probes that are not *statically* defined apriori in code (eg [USDT
+probes are probes that are not *statically* defined apriori in code (e.g., [USDT
 probes](usdt.pdf)). Dynamic probes are discovered on-demand by the kernel uprobe
 subsystem. For userland applications and libraries, a point of instrumentation
 is called a `uprobe`.
@@ -35,7 +35,12 @@ slightly different from the `kprobe` syntax.
 ### uprobe/uretprobe and their arguments
 
 A key feature of `uprobe`s is that we get access to the arguments via reserved
-keywords `arg0`, `arg1`, `...`,  `argN`.
+keywords `arg0`, `arg1`, `...`,  `argN`. An important note here is that bpftrace
+doesn't provide the facility for us to deal with C++ objects at the minute. Therefore,
+if a functions first argument is something simple such as a `std::string` then it
+isn't currently possible to inpsect the actual string associated with that object as
+you would with a C `char*`. This is obviously a significant limitation for the C++
+developer.
 
 Just like `kprobe`s, every `uprobe` comes with a complementary `uretprobe`.
 `uretprobe`s fire _after_ the function returns. Because of this, we get access
@@ -52,7 +57,7 @@ $ bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
 ```
 
 There might be a lot of output, but if you open an extra shell and run
-`exit 1234`, you should be able to see it.
+`exit 1234`, you should be able to see it (or maybe pipe the outut to `grep`).
 
 
 ### Hands on: explore symbols to trace
@@ -84,6 +89,8 @@ $ objdump -t --demangle `which fb-oomd-cpp` | grep updateContext
 0000000000595ef0 g     F .text  0000000000000998              Oomd::Oomd::updateContext(std::unordered_set<Oomd::CgroupPath, std::hash<Oomd::CgroupPath>, std::equal_to<Oomd::CgroupPath>, std::allocator<Oomd::CgroupPath> > const&, Oomd::OomdContext&)
 00000000005953e0 g     F .text  0000000000000b02              Oomd::Oomd::updateContextCgroup(Oomd::CgroupPath const&, Oomd::OomdContext&)
 ```
+
+*NOTE:* When tracing C++ applications you must use the *mangled* name of the function in your probe specification. Obviously this can get pretty horrible (especially with templates). 
 
 If you're going to trace a dynamically linked library, it can be a nice sanity
 check to see what your application is going to link against:
@@ -126,7 +133,7 @@ It looks like `__libc_start_main` will work for us.
 Now let's create a bpftrace script that will track in histograms how long
 each process lives for:
 ```
-$ cat process_lifetimes.bt
+# cat process_lifetimes.bt
 uprobe:/lib64/libc-2.17.so:__libc_start_main
 {
   @start_times[pid] = nsecs;
@@ -198,6 +205,7 @@ Attaching 3 probes...
 Now we have some nice adhoc data on process lifetimes. We could easily customize
 this script to provide more data.
 
+This example highlights a very important aspect of user probes that can be used to great advantage: we can instrument a library or executable's binary image and we will then fire this probe for every subsequent invocation of the binary image. This provides us with an excellent facility to gain true global insights into all applications that use the instrumented image.
 ---
 ## Exercises
 
