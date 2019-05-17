@@ -23,7 +23,7 @@ bpftrace scripts are made up of one or more *Action Blocks*. An action block con
 
 * **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g., strcmp(3)), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
 * **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'hhvm' or is the file we are writing to located in `/tmp`. Predicates are contained in between two forward slash characters.
-* **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout. Actions are contained in between curly braces.
+* **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout. All actions are contained in between a pair of curly braces.
 
 An example action block looks like this:
 
@@ -31,7 +31,7 @@ An example action block looks like this:
 tracepoint:syscalls:sys_enter_write   /* The probe */
 /comm == "hhvm"/                      /* The predicate */
 {
-  @[args->fd] = sum(args->count);     
+  @[args->fd] = sum(args->count);     /* An action */
 }
 ```
 
@@ -157,7 +157,7 @@ Process and thread identifiers are something we come across a lot when trying to
 
 Let's look at the `cppfbagentd` WDB process as an example:
 
-1. Count the syscalls made by each `<pid, tid, comm>` tuple for every thread in the main cppfbagentd process (use `pgrep -f cppfbagentd` to find the main process pid and predicate using that),
+1. Count the syscalls made by each `<pid, tid, comm>` tuple for every thread in the main cppfbagentd process (use "`pgrep -f cppfbagentd`" to find the main process pid and predicate using that),
 2. Target a particular tid discovered previously and keep a count of the individual syscalls it makes.
 
 ## Associative arrays and tracking threads

@@ -16,7 +16,6 @@ tracepoint:syscalls:sys_enter_accept4
 
 You should have in excess of 300 system calls to choose from!
 
----
 
 ### Syscall probe naming format
 
@@ -36,16 +35,15 @@ tracepoint:syscalls:sys_exit_open
 
 **Question:** Does `t:syscalls:sys_exit_exit` exist? Is so, when will it fire?
 
----
 
 ### Probe arguments
 
-#### Entry probes
+#### Entry probes:
 
 The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for write(2), the syscall has 3 arguments: `int fd`, `void* buf` and `size_t count`. We can verify that with the `-lv` options to `bpftrace`:
 
 ```
-[root@twshared6749.09.cln1 ~]# bpftrace -lv t:syscalls:sys_enter_write
+# bpftrace -lv t:syscalls:sys_enter_write
 tracepoint:syscalls:sys_enter_write
     int __syscall_nr;
     unsigned int fd;
@@ -53,7 +51,7 @@ tracepoint:syscalls:sys_enter_write
     size_t count;
 ```
 
-[**NOTE**: We've used the abbreviated name for `tracepoint` above - simply `t`!]
+[**NOTE**: We've used the abbreviated name for `tracepoint` above - simply "`t`"!]
 
 Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. This is really just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
 
@@ -92,7 +90,7 @@ A few things to note from the above example:
 - The `comm` builtin gives us the name of the process doing the write call.
 - The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very simple modification!).
 
-#### Return probes
+#### Return probes:
 
 As with any C function, we only have a single return value from a syscall. As an exercise, compare the return codes specified in the man pages with the output of `bpftrace -lv` for the following syscalls exit probes:
 
@@ -100,9 +98,8 @@ As with any C function, we only have a single return value from a syscall. As an
 - `mmap`
 - `write`
 
-As you can see, the types don't agree as bpftrace always reports the return type as 'long' which is an 8 byte quantity. We may need to cast the return value accordingly to the correct return type as specified by the man page.
+As you can see, the types don't agree as bpftrace always reports the return type as 'long'. We may need to cast the return value accordingly to the correct return type as specified by the man page.
 
-### Raw vs "Normal" syscalls
 ---
 
 ## Exercises

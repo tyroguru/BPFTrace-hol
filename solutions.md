@@ -30,6 +30,7 @@ tracepoint:syscalls:sys_enter_*
 ```
 
 1. Expand the above script to display the per-process system call counts every 10 seconds:
+
 ```
 tracepoint:syscalls:sys_enter_*
 {
@@ -44,6 +45,7 @@ interval:s:10
 
 
 1. Delete all per-process syscall stats every 10 secs:
+
 
 ```
 tracepoint:syscalls:sys_enter_*
@@ -129,7 +131,7 @@ t:syscalls:sys_enter_write
 t:syscalls:sys_exit_write
 /@ts[tid]/
 {
-        printf("time taken for write: %lld nsecs\n", nsecs - @ts[tid]);
+        printf("time taken for write: %lld", nsecs - @ts[tid]);
         @[tid] = 0;
 }
 ```
@@ -221,3 +223,106 @@ profile:ms:10
   }
 }
 ```
+
+### System Call Tracing
+
+**mmap**
+
+1. Locate the process doing the most mmap calls in a 30 second period.
+
+```
+t:syscalls:sys_enter_mmap
+{
+  @[comm] = count();
+}
+
+interval:s:30
+{
+  print(@);
+}
+```
+
+1. What are the sizes of the segments being created?
+
+Segments from 4k -> 32k in steps of 4k.
+
+```
+t:syscalls:sys_enter_mmap
+/comm == "mapit"/
+{
+  @[args->len/1024] = count();
+}
+
+interval:s:30
+{
+  print(@);
+}
+```
+
+1. Can you tell what percentage of the created mappings are private to the
+process and which are shared?
+
+```
+#define MAP_SHARED  0x01    /* Share changes.  */
+#define MAP_PRIVATE 0x02    /* Changes are private.  */
+
+BEGIN
+{
+  @total = 0;
+  @shared = 0;
+  @private = 0;
+}
+
+t:syscalls:sys_enter_mmap
+/comm == "mapit"/
+{
+  @total++;
+
+  if (args->flags & MAP_SHARED)
+  {
+    @shared++;
+  }
+
+  if (args->flags & MAP_PRIVATE)
+  {
+    @private++;
+  }
+}
+
+interval:s:30
+{
+  printf("Total mmap: Total %llu, shared %llu private  %llu\n",
+          @total, @shared, @private);
+}
+```
+
+The above gives the following output for me:
+
+```
+Total mmap: Total 150000, shared 112500 private  37500
+```
+
+So, 75% of the segments are MAP_SHARED and 25% are MAP_PRIVATE.
+
+
+**open**
+
+1. Write a script to show which files are being opened.
+
+t:syscalls:sys_enter_open
+{
+  @[str(args->filename)] = count();
+}
+
+
+1. Extend that script to show which processes are opening which file.
+
+t:syscalls:sys_enter_open
+{
+  @[comm, str(args->filename)] = count();
+}
+
+
+1. Change that script to only show open calls that are creating temp files.
+
+

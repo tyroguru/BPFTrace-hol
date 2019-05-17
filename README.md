@@ -6,7 +6,7 @@ This hands-on lab is designed to be completed in half a day though that may vary
 
 We suggest that you complete the labs in the order they are presented below. The sections in each lab generally contain a mix of presented information and suggested exercises. We strongly suggest that you manually run any bpftrace scripts that are used in explanations and feel free to modify them and see what happens!
 
-Finally, note that the lab is designed to be ran stand alone and without a lecturer but it is probably at its best when undertook alongside the short presentations that accompany it (assuming your lecturer doesn't suck I guess...).
+Finally, note that the lab is designed to be ran stand alone and without a lecturer but it is probably at its best when undertook in a shared learning environment (i.e., having people around to discuss your problems and ideas with!).
 
 
 ---
@@ -15,13 +15,16 @@ Finally, note that the lab is designed to be ran stand alone and without a lectu
 
 1. Currently this lab can only be ran on a Facebook devserver so make sure you've bought yours to the party.
 1. Unless specified differently, all commands will be executed as the `root` user so ensure you have access to that account.
-1.The 'fb-bpftrace' package should already be installed on your devserver. To verify this execute the following command:
+
+### Environment Setup
+
+1. The 'fb-bpftrace' package should already be installed on your devserver. To verify this execute the following command:
 
 ```
 # rpmquery fb-bpftrace
 ```
 
-If the above `rpmquery` command returns `package fb-bpftrace is not installed` then manually install the package:
+If the above `rpmquery` command returns "`package fb-bpftrace is not installed`" then manually install the package:
 
 ```
 # yum install -q -y fb-bpftrace
@@ -30,7 +33,7 @@ If the above `rpmquery` command returns `package fb-bpftrace is not installed` t
 1. Copy `bpftrace-hol.tar.gz` to your dev server. To copy the compressed archive from your laptop to your devserver:
 
 ```
-scp bpftrace-hol.tar.gz <unixname>@<hostname>:/home/<unixname>
+# scp bpftrace-hol.tar.gz <unixname>@<hostname>:/home/<unixname>
 ```
 
 1. Upack the archive:
@@ -68,7 +71,7 @@ bpftrace-hol/usdt.pdf
 
 1. You're good to go!
 
-*NOTE:*  a number of exercises in the lab will make use of the `bpfhol` binary that is located at the top level directory of the `bpftrace-hol` package install. Its purpose if to run load generators in the background that aid in demostrating features of the bpftrace language. When executed, the `bpfhol` binary presents the following menu:
+**NOTE:**  a number of exercises in the lab will make use of the `bpfhol` binary that is located at the top level directory of the `bpftrace-hol` package install. Its purpose is to run load generators in the background that aid in demostrating features of the bpftrace language. When executed, the `bpfhol` binary presents the following menu:
 
 ```
 1. syscalls
@@ -79,11 +82,16 @@ bpftrace-hol/usdt.pdf
 9. exit
 ```
 
-Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes etc. .If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all exisiting load generators that may be running.
+Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes etc. . If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all exisiting load generators that may be running.
 
+Some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generally expected that you will look up the language feature in the [online reference guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md).
+
+Example solutions for all lab exercises are provided in the [solutions document](solutions.pdf).
+
+Please use your instructor to discuss any issues or problems you may have. Everyone including them is on a learning curve with bpftrace so your question or problem will always be valuable.
+
+Finally, these pdf documents have been converted from github markdown to pdf using pandoc. While pandoc does an analzing job at this there are some areas where it gts a bit confused, especially marking up code blocks. Apologies in advance for any formatting that looks awkward.
 ---
-
-Also, some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generallyexpected that you will look up the language feature in the [online reference guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md).
 
 ### Labs
 
