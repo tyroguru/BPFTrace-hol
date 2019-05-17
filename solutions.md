@@ -309,18 +309,21 @@ So, 75% of the segments are MAP_SHARED and 25% are MAP_PRIVATE.
 
 1. Write a script to show which files are being opened.
 
+```
 t:syscalls:sys_enter_open
 {
   @[str(args->filename)] = count();
-}
+```}
 
 
 1. Extend that script to show which processes are opening which file.
 
+```
 t:syscalls:sys_enter_open
 {
   @[comm, str(args->filename)] = count();
 }
+```
 
 
 1. Change that script to only show open calls that are creating temp files.
