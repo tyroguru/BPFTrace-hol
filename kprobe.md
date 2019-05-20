@@ -58,7 +58,7 @@ and therefore the arguments are available to us as:
   arg3 - loff_t *pos
 ```
 
-However, a big caveat with accessing parameters is that the Linux kernel doesn't currently have any type information exposed to BPF that bpftrace can use. Therefore we mst `#include` the appropriate header files to access the required defintions. For example, to access a `file*` typed argument we need to `#include linux/fs.h> to obatin the structure definition. This should hopefully be fixed in the longer term with the [BTF project](https://facebookmicrosites.github.io/bpf/blog/2018/11/14/btf-enhancement.html) which aims to put type information in the kernel that is always accessible.
+However, a big caveat with accessing parameters is that the Linux kernel doesn't currently have any type information exposed to BPF that bpftrace can use. Therefore we must `#include` the appropriate header files to access the required definitions. For example, to access a `file*` typed argument we need to `#include linux/fs.h> to obtain the structure definition. This should hopefully be fixed in the longer term with the [BTF project](https://facebookmicrosites.github.io/bpf/blog/2018/11/14/btf-enhancement.html) which aims to put type information in the kernel that is always accessible.
 
 
 Although not listed in `bpftrace -l`, every `kprobe` has a corresponding `kretprobe`.

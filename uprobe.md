@@ -38,7 +38,7 @@ A key feature of `uprobe`s is that we get access to the arguments via reserved
 keywords `arg0`, `arg1`, `...`,  `argN`. An important note here is that bpftrace
 doesn't provide the facility for us to deal with C++ objects at the minute. Therefore,
 if a functions first argument is something simple such as a `std::string` then it
-isn't currently possible to inpsect the actual string associated with that object as
+isn't currently possible to inspect the actual string associated with that object as
 you would with a C `char*`. This is obviously a significant limitation for the C++
 developer.
 
@@ -57,7 +57,7 @@ $ bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
 ```
 
 There might be a lot of output, but if you open an extra shell and run
-`exit 1234`, you should be able to see it (or maybe pipe the outut to `grep`).
+`exit 1234`, you should be able to see it (or maybe pipe the output to `grep`).
 
 
 ### Hands on: explore symbols to trace

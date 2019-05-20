@@ -140,8 +140,7 @@ With hhvm runing on my devserver:
 usdt:/data/users/jonhaslam/fbsource/fbcode/buck-out/dbgo/gen/hphp/hhvm/hhvm/hhvm:hhvm:hhvm_cow_concat
 ```
 
-XXX Finish this!
-
+< Output here >
 
 
 #### IS_ENABLED probes
@@ -184,7 +183,7 @@ So, a trivial example would to use the `mapper:large_map` probe in this way woul
 
 ### Additional Facebook related note:
 
-If an application has been converted to use large pages for its text region then this causes USDT probes (and uprobes) to not work (see task T22479091). The only workaround for this at the minute is to explictly exclude functions that contain USDT probes from being included in the large page relocation process. We do this by using the `NEVER_HUGIFY()` macro to specifiy that a function should never be relocated to a large page. Obviously you will need to consider whether you want to sacrific performance for observability here.
+If an application has been converted to use large pages for its text region then this causes USDT probes (and uprobes) to not work (see task T22479091). The only workaround for this at the minute is to explicitly exclude functions that contain USDT probes from being included in the large page relocation process. We do this by using the `NEVER_HUGIFY()` macro to specify that a function should never be relocated to a large page. Obviously you will need to consider whether you want to sacrifice performance for observability here.
 
 
 ### Non-Folly way (External to Facebook!)
@@ -240,7 +239,7 @@ Let's summarise the advantages and disadvantages of USDT probes and uprobes:
 
 1. USDT provides a more stable naming and argument scheme. With uprobes a probe consumer as at the mercy of both the compiler toolchain and the developer. Functions may be renamed as is the case with some implementations of large pages and function signatures may change, either through mangling or function arguments changing. Although Linux USDT currently offers no scheme to enforce stability contracts on USDT probes the mere presence of a probe macro makes code maintainers think about the probe and its arguments.
 
-1. No inlining. A big problem with uprobes is that it can only instrument functions at the entry and return sites and therefore if the compiler inlines a function it is no longer available to instrument. As inlining is used extremely aggressively in optimised code for performance this is a very common problem wih uprobes. USDT with its explicit probe sites is not open to this issue.
+1. No inlining. A big problem with uprobes is that it can only instrument functions at the entry and return sites and therefore if the compiler inlines a function it is no longer available to instrument. As inlining is used extremely aggressively in optimised code for performance this is a very common problem with uprobes. USDT with its explicit probe sites is not open to this issue.
 
 1. With USDT we can place probes at any place in the code, not just entry and return sites.
 
@@ -263,12 +262,6 @@ NOTE: before attempting the tasks in this section select the `usdt` option from 
 1. What probe is the `usdt-passwd` program exporting?
 1. How many arguments does it provide?
 1. All of the probes arguments are character pointers: the first argument is the username of interest and the second is the home directory of that user. What are they?
-1. *XXX* How about getting them to add a second probe?
-1. *XXX* How about getting them to add a second `passwdfound` probe and looking at the locations?
-
-### thrift example
-
-I have taken the baic thrift example and added a probe to it. They would need to copy it to an fbcode directory, build it and run it. It needs to be made a bity more interesting but I think it's got legs.
 
 ---
 

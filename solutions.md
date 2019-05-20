@@ -313,7 +313,8 @@ So, 75% of the segments are MAP_SHARED and 25% are MAP_PRIVATE.
 t:syscalls:sys_enter_open
 {
   @[str(args->filename)] = count();
-```}
+}
+```
 
 
 1. Extend that script to show which processes are opening which file.
@@ -328,4 +329,16 @@ t:syscalls:sys_enter_open
 
 1. Change that script to only show open calls that are creating temp files.
 
+The solution for this questions needs us to #include some system headers to obtain the O_TMPFILE symbol definition but currently (as of May 20th, 2019) there is a bug that is causing problems #including system headers. As a workaround we simply #define the value ourselves.
 
+```
+#define O_TMPFILE 0x410000
+
+t:syscalls:sys_enter_open
+{
+  if ((args->flags & O_TMPFILE) == O_TMPFILE)
+  {
+    printf("tmpfile: %s\n", str(args->filename));
+  }
+}
+```

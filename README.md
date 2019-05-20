@@ -1,8 +1,8 @@
 # bpftrace Hands-On Labs
 
-[bpftrace](https://github.com/iovisor/bpftrace) is an OSS project that provides a high level tracing language interface on top of the Enhanced Berkely Packet Filter (eBPF) framework. It was initially developed by Alistair Robertson and now has a flourishing developer community on github.
+[bpftrace](https://github.com/iovisor/bpftrace) is an OSS project that provides a high level tracing language interface on top of the Enhanced Berkeley Packet Filter (eBPF) framework. It was initially developed by Alistair Robertson and now has a flourishing developer community on github.
 
-This hands-on lab is designed to be completed in half a day though that may vary depending upon how thorough you want to be with the exercises. It has been written as a kind of "hands-on bootstrapping" guide for the bpftrace beginner and aims to give you enough information to kickstart your productivity with bpftrace. Note that it is by no means a complete treatment of the subject and many things are missed out for the sake of brevity.
+This hands-on lab is designed to be completed in half a day though that may vary depending upon how thorough you want to be with the exercises. It has been written as a kind of "hands-on bootstrapping" guide for the bpftrace beginner and aims to give you enough information to kick-start your productivity with bpftrace. Note that it is by no means a complete treatment of the subject and many things are missed out for the sake of brevity.
 
 We suggest that you complete the labs in the order they are presented below. The sections in each lab generally contain a mix of presented information and suggested exercises. We strongly suggest that you manually run any bpftrace scripts that are used in explanations and feel free to modify them and see what happens!
 
@@ -36,7 +36,7 @@ If the above `rpmquery` command returns "`package fb-bpftrace is not installed`"
 # scp bpftrace-hol.tar.gz <unixname>@<hostname>:/home/<unixname>
 ```
 
-1. Upack the archive:
+1. Unpack the archive:
 
 ```
 # cd ~
@@ -71,7 +71,7 @@ bpftrace-hol/usdt.pdf
 
 1. You're good to go!
 
-**NOTE:**  a number of exercises in the lab will make use of the `bpfhol` binary that is located at the top level directory of the `bpftrace-hol` package install. Its purpose is to run load generators in the background that aid in demostrating features of the bpftrace language. When executed, the `bpfhol` binary presents the following menu:
+**NOTE:**  a number of exercises in the lab will make use of the `bpfhol` binary that is located at the top level directory of the `bpftrace-hol` package install. Its purpose is to run load generators in the background that aid in demonstrating features of the bpftrace language. When executed, the `bpfhol` binary presents the following menu:
 
 ```
 1. syscalls
@@ -82,7 +82,7 @@ bpftrace-hol/usdt.pdf
 9. exit
 ```
 
-Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes etc. . If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all exisiting load generators that may be running.
+Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes etc. . If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all existing load generators that may be running.
 
 Some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generally expected that you will look up the language feature in the [online reference guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md).
 
@@ -90,7 +90,7 @@ Example solutions for all lab exercises are provided in the [solutions document]
 
 Please use your instructor to discuss any issues or problems you may have. Everyone including them is on a learning curve with bpftrace so your question or problem will always be valuable.
 
-Finally, these pdf documents have been converted from github markdown to pdf using pandoc. While pandoc does an analzing job at this there are some areas where it gts a bit confused, especially marking up code blocks. Apologies in advance for any formatting that looks awkward.
+Finally, these pdf documents have been converted from github markdown to pdf using pandoc. While pandoc does an analyzing job at this there are some areas where it gets a bit confused, especially marking up code blocks. Apologies in advance for any formatting that looks awkward.
 ---
 
 ### Labs

@@ -49,7 +49,10 @@ void execute(std::string& path)
 
 void syscalls()
 {
-  std::string progs[] = { "syscalls/closeall", "syscalls/mapit" };
+  std::string progs[] = {
+    "syscalls/closeall",
+    "syscalls/mapit",
+    "syscalls/tempfiles" };
 
   for (auto prog : progs )
   {

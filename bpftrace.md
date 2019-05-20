@@ -1,8 +1,8 @@
 ## The bpftrace language
 
-In this lab we will work through some of the key language features of bpftrace. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [BPFTrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md) for details on all language features.
+In this lab we will work through some of the key language features of bpftrace. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [bpftrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md) for details on all language features.
 
-**bpftrace** is a language that is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key languagae primitives and some techniques which enable us to obtain fresh insights.
+**bpftrace** is a language that is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
 
 ## Dynamic Tracing - So What!??
 
@@ -10,10 +10,10 @@ A key attribute of bpftrace is its *dynamic* nature. To understand the myriad co
 
 1. Form a hypothesis based upon our current understanding
 1. Gather data / evidence to prove or disprove our hypothesis
-1. Analyse data
+1. Analyze data
 1. Repeat until satisfaction is achieved
 
-The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this, we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we ned to debug a problem.
+The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this, we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we need to debug a problem.
 
 bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do, we can very quickly iterate through different hypotheses and gain novel insights about systemic behaviour in very short periods of time.
 
@@ -138,7 +138,7 @@ Fri Apr 26 08:26:47 2019
 Fri Apr 26 08:26:57 2019
 ```
 
-Now expnd the script written previously to print the per-process system call counts every 10 seconds.
+Now expand the script written previously to print the per-process system call counts every 10 seconds.
 
 1. Add the ability to only display the top 10 per process counts (hint: use the `print` action)
 1. Delete all per-process syscall stats every 10 secs (hint: use the `clear` action);
