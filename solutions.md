@@ -188,7 +188,6 @@ t:syscalls:sys_enter_write
 /tid == 1414349/
 {
         @ts[tid] = nsecs;
-        kstack;
 }
 
 t:syscalls:sys_exit_write
