@@ -211,6 +211,10 @@ This example highlights a very important aspect of user probes that can be used 
 
 ## Exercises
 
+### Track process lifetimes
+
+1. Can you make the histgrams display _seconds_ instead of nanoseconds?
+
 ### uprobeme
 
 NOTE: before attempting task 2 in this section, select the `uprobes` option from the `bpfhol` menu.
