@@ -206,7 +206,9 @@ Now we have some nice adhoc data on process lifetimes. We could easily customize
 this script to provide more data.
 
 This example highlights a very important aspect of user probes that can be used to great advantage: we can instrument a library or executable's binary image and we will then fire this probe for every subsequent invocation of the binary image. This provides us with an excellent facility to gain true global insights into all applications that use the instrumented image.
+
 ---
+
 ## Exercises
 
 ### uprobeme
@@ -219,6 +221,7 @@ NOTE: before attempting task 2 in this section, select the `uprobes` option from
 
 
 Now we've seen dynamic user probes we move on to [user static probes](usdt.pdf).
+
 ---
 
 ## Further Reading

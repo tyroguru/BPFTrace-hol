@@ -1,8 +1,8 @@
-## Solutions to Lab Exercises
+# Solutions to Lab Exercises
 
 Quite often there will a number of possible solutions to the lab exercises. Below are suggested solutions (yours may well be better!).
 
-### The bpftrace language
+# The bpftrace language
 
 1. This action block keeps track of the number of bytes written to each file descriptor for the hhvm process (more accurately, any thread with the thread name of "hhvm").
 
@@ -223,7 +223,7 @@ profile:ms:10
 }
 ```
 
-### System Call Tracing
+# System Call Tracing
 
 **mmap**
 

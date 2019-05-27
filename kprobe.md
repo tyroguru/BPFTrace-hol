@@ -169,6 +169,7 @@ It appears `pahole` needs a non-compressed linux image (ie `/boot/vmlinux-*` vs
 `/boot/vmlinuz-*`) to look up symbols.
 
 ---
+
 ## Exercises
 
 ### Monitoring cgroup2 fs
@@ -188,6 +189,7 @@ NOTE: before attempting the tasks in this section select the `kprobes` option fr
 After this excursion in to the kernel we're going back up into userland with [uprobes](uprobe.pdf).
 
 ---
+
 ## Further Reading
 
 * https://github.com/torvalds/linux/blob/master/Documentation/kprobes.txt
