@@ -6,7 +6,7 @@ probes](usdt.pdf)). Dynamic probes are discovered on-demand by the kernel uprobe
 subsystem. For userland applications and libraries, a point of instrumentation
 is called a `uprobe`.
 
-The `uprobe` is similar to [kprobe's](kprobe.pdf), When a `uprobe` is armed, the
+The `uprobe` is very similar to [kprobe](kprobe.pdf). When a `uprobe` is armed, the
 kernel will dynamically replace the target address with an `INT3` (0xCC) instruction.
 The original instruction is saved into a special part of the process address
 space and will later be single stepped there. Eventually if the breakpoint (`INT3`)
@@ -37,9 +37,9 @@ slightly different from the `kprobe` syntax.
 A key feature of `uprobe`s is that we get access to the arguments via reserved
 keywords `arg0`, `arg1`, `...`,  `argN`. An important note here is that bpftrace
 doesn't provide the facility for us to deal with C++ objects at the minute. Therefore,
-if a functions first argument is something simple such as a `std::string` then it
+if a function's first argument is something simple such as a `std::string` then it
 isn't currently possible to inspect the actual string associated with that object as
-you would with a C `char*`. This is obviously a significant limitation for the C++
+you would with a C `char *`. This is obviously a significant limitation for the C++
 developer.
 
 Just like `kprobe`s, every `uprobe` comes with a complementary `uretprobe`.
