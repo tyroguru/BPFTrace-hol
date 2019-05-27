@@ -82,7 +82,7 @@ bpftrace-hol/usdt.pdf
 9. exit
 ```
 
-Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes etc. . If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all existing load generators that may be running.
+Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes, etc. . If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all existing load generators that may be running.
 
 Some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generally expected that you will look up the language feature in the [online reference guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md).
 
