@@ -30,11 +30,24 @@ If the above `rpmquery` command returns "`package fb-bpftrace is not installed`"
 # yum install -q -y fb-bpftrace
 ```
 
-1. Copy `bpftrace-hol.tar.gz` to your dev server. To copy the compressed archive from your laptop to your devserver:
+1. Copy `bpftrace-hol.tar.gz` to your dev server:
 
 ```
-# scp bpftrace-hol.tar.gz <unixname>@<hostname>:/home/<unixname>
+# cp /mnt/homedir/jonhaslam/public_html/bpftrace-hol.tar.gz ~
 ```
+
+1. If you want to view the pdf's for the course on your laptop then copy `bpftrace-hol.tar.gz` from your dev server to you laptop:
+
+```
+# scp <unixname>@<hostname>:/home/<unixname>/bpftrace-hol.tar.gz .
+```
+
+or download the archive via https:
+
+```
+# wget https://home.fburl.com/~jonhaslam/bpftrace-hol.tar.gz .
+```
+
 
 1. Unpack the archive:
 
