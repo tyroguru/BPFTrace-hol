@@ -90,7 +90,7 @@ $ objdump -t --demangle `which fb-oomd-cpp` | grep updateContext
 00000000005953e0 g     F .text  0000000000000b02              Oomd::Oomd::updateContextCgroup(Oomd::CgroupPath const&, Oomd::OomdContext&)
 ```
 
-*NOTE:* When tracing C++ applications you must use the *mangled* name of the function in your probe specification. Obviously this can get pretty horrible (especially with templates). 
+*NOTE:* When tracing C++ applications you must use the *mangled* name of the function in your probe specification. Obviously this can get pretty horrible (especially with templates).
 
 If you're going to trace a dynamically linked library, it can be a nice sanity
 check to see what your application is going to link against:
@@ -206,6 +206,66 @@ Now we have some nice adhoc data on process lifetimes. We could easily customize
 this script to provide more data.
 
 This example highlights a very important aspect of user probes that can be used to great advantage: we can instrument a library or executable's binary image and we will then fire this probe for every subsequent invocation of the binary image. This provides us with an excellent facility to gain true global insights into all applications that use the instrumented image.
+
+### Hands on: uprobe folly functions
+
+This is a more (than usual) contrived example of `uprobe`ing. Suppose we wanted
+to examine how often and from where `folly::EventBase` methods are called
+inside `dynolog`.  (`dynolog` monitors various system stats on all FB hosts).
+Even more specifically, we're interested in when work is being scheduled.
+
+First, let's double check the symbols we expect to see are there:
+```
+$ sudo objdump -t /proc/`pidof dynolog`/exe | c++filt | grep folly::EventBase::run
+00000000048dd7e0 l     F .text  0000000000000063              unsigned long folly::detail::function::execBig<folly::EventBase::runInEventBaseThreadAndWait(folly::Function<void ()>)::{lambda()#1}>(folly::detail::function::Op, folly::detail::function::Data*, folly::detail::function::Data)
+00000000048ddce0 l     F .text  0000000000000105              void folly::detail::function::FunctionTraits<void ()>::callBig<folly::EventBase::runInEventBaseThreadAndWait(folly::Function<void ()>)::{lambda()#1}>(folly::detail::function::Data&)
+00000000048e1870 g     F .text  000000000000009e              folly::EventBase::runImmediatelyOrRunInEventBaseThreadAndWait(folly::Function<void ()>)
+00000000048df6c0 g     F .text  0000000000000116              folly::EventBase::runInLoop(folly::Function<void ()>, bool)
+00000000048e15c0 g     F .text  00000000000000b3              folly::EventBase::runInEventBaseThread(folly::Function<void ()>)
+00000000048df5b0 g     F .text  0000000000000109              folly::EventBase::runInLoop(folly::EventBase::LoopCallback*, bool)
+00000000048e1680 g     F .text  00000000000001ee              folly::EventBase::runInEventBaseThreadAndWait(folly::Function<void ()>)
+00000000048de8e0 g     F .text  00000000000000fa              folly::EventBase::runBeforeLoop(folly::EventBase::LoopCallback*)
+<snip>
+```
+
+Excellent, it looks like we have stuff available to trace. Note that
+`/proc/<PID>/exe` is just a symlink to the actual binary.
+
+Because C++ symbols are usually mangled, we have to be careful to attach to the
+_mangled_ symbol names. Rather than spending a lot of time piping `objdump`
+output to `c++filt`, copying the pertinent address, searching `objdump` output
+for the symbol address, and then using the mangled name in bpftrace, it can be
+easier to fuzzy match using wildcards:
+
+```
+# cat uprobe_folly.bt
+uprobe:/usr/local/bin/dynolog:*folly*EventBase*run*
+{
+  printf("%s\n", ustack(1));
+  @[ustack] = count();
+}
+
+# bpftrace uprobe_folly.bt
+udo bpftrace uprobe_folly.bt
+Attaching 78 probes...
+        folly::EventBase::runInLoop(folly::EventBase::LoopCallback*, bool)+0
+
+
+        folly::EventBase::runInEventBaseThread(folly::Function<void ()>)+0
+
+
+        folly::EventBase::runInLoop(folly::EventBase::LoopCallback*, bool)+0
+
+
+        folly::EventBase::runLoopCallbacks()+0
+
+
+        folly::EventBase::runLoopCallbacks()+0
+
+
+        folly::EventBase::runLoopCallbacks()+0
+<snip>
+```
 
 ---
 
