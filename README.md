@@ -113,5 +113,4 @@ Finally, these pdf documents have been converted from github markdown to pdf usi
 1. [Working with kernel probes](kprobe.pdf)
 1. [Working with dynamic user probes](uprobe.pdf)
 1. [Working with static user probes](usdt.pdf)
-1. [Working with performance counters](perfcnt.pdf)
 1. [Solutions to lab exercises](solutions.pdf)

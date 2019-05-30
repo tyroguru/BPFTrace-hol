@@ -198,4 +198,4 @@ Note that the `interval` based probes we have used previously only fire on a sin
 
 1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 10 millisecond `profile` probe (profile:ms:10)  to count the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
 
-In the `periodic-exec.bt` example above it would be interesting to discover what processes are being exec'd here. Feel free to write that now if you feel adventurous: you will need to access the first argument to the syscall which stores the path and you will need to use the `str()` builtin function. All of this will be explained in the next chapter on [syscalls](syscalls.pdf).
+Now that we've covered some of the basic building blocks of bpftrace, we'll continue the voyage of discovery by looking at the fundamental interface between userland code and the kernel: the [system call](syscalls.pdf).
