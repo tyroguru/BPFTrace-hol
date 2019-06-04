@@ -88,7 +88,7 @@ A few things to note from the above example:
 - Owing to a current architectural limit in BPF, bpftrace restricts strings to be 64 bytes by default. We can increase these using the `BPFTRACE_STRLEN` environment variable to a maximum of 200 bytes.
 - `char *`'s must be explicitly converted to strings using the `str()` builtin.
 - The `comm` builtin gives us the name of the process doing the write call.
-- The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very simple modification!).
+- The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very small modification).
 
 #### Return probes:
 
