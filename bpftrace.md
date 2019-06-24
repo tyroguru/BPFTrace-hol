@@ -174,7 +174,7 @@ Sometimes we may want to track the behaviour of individual threads within a proc
   /@[tid]/
   {
     $time_taken = nsecs - @[tid];
-    @[tid] = 0;
+    delete(@[tid])
   }
 ```
 
