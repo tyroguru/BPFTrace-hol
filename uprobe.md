@@ -59,6 +59,8 @@ $ bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
 There might be a lot of output, but if you open an extra shell and run
 `exit 1234`, you should be able to see it (or maybe pipe the output to `grep`).
 
+*C++ Note:* When observing C++ remember that each function is passed the `this` pointer implcitly as the first argument. This means that when dealing with C++ applications we index a functions arguments starting at arg1 and not arg0.
+
 
 ### Hands on: explore symbols to trace
 
