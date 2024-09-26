@@ -6,11 +6,11 @@ The number of system calls may vary from kernel to kernel and we can see which e
 
 ```
 # bpftrace -l 'tracepoint:syscalls:sys_enter*'
-tracepoint:syscalls:sys_enter_socket
-tracepoint:syscalls:sys_enter_socketpair
-tracepoint:syscalls:sys_enter_bind
-tracepoint:syscalls:sys_enter_listen
+tracepoint:syscalls:sys_enter_accept
 tracepoint:syscalls:sys_enter_accept4
+tracepoint:syscalls:sys_enter_access
+tracepoint:syscalls:sys_enter_add_key
+tracepoint:syscalls:sys_enter_adjtimex
 <elided>
 ```
 
@@ -45,47 +45,50 @@ The arguments for a system call probe are made available through the builtin `ar
 ```
 # bpftrace -lv t:syscalls:sys_enter_write
 tracepoint:syscalls:sys_enter_write
-    int __syscall_nr;
-    unsigned int fd;
-    const char * buf;
-    size_t count;
+    int __syscall_nr
+    unsigned int fd
+    const char __attribute__((btf_type_tag("user"))) * buf
+    size_t count
 ```
 
-[**NOTE**: We've used the abbreviated name for `tracepoint` above - simply "`t`"!]
-
-Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. This is really just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
+A few things to note:
+    - We've used the abbreviated name for `tracepoint` above - simply "`t`".
+    - You can ignore the `__attribute__` tag on the `buf` parameter. This is kernel implementation detail you don't need to worry about.
+    - Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. Again, this is just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
 
 To access an argument, we reference it through the `args` built-in using its name, e.g., `args->buf`. In the following example we capture the first 200 bytes (or less) of any buffer being sent to file descriptor 2 which is usually `stderr`
 
 ```
 # cat write.bt
-t:syscalls:sys_enter_write
+config = {
+  max_strlen = 31744; /* 31KB*/
+}
+
+/* fd 2 might not be a processes stderr but it's good fun nonetheless */
+tracepoint:syscalls:sys_enter_write
 /args->fd == 2/
 {
         printf("%s: %s\n", comm,  str(args->buf));
 }
 
-# BPFTRACE_STRLEN=200 bpftrace ./write.bt
-agent-helper: V0313 09:20:08.559548 42665 ServiceHandler.cpp:35] (s3 fb_user 1218794780) Starting job
- job
-endencies
-V0313 09:20:08.478726 39766 ServiceHandler.cpp:78] (s3 fb_user 100034610238583) Scheduling extra
-CPUThreadPool26: V0313 09:20:08.619328 42669 ServiceHandler.cpp:64] (s3 fb_user 100000663391190) Missing 2 dependencies
+# bpftrace ./write.bt
+Collection-27: D0926 06:01:22.474303 128492 SchedulerThread.cpp:144] SCHEDULABLE BEING REFIRED id=*NoisyCollectors* interval=1000000000 ns offset=783221187 ns now=@1378369044761823 ns fireTime=@1378369044696482 ns nextFireTime=1378370044761823 ns
+tFireTime=1378428569540704 ns
+235 ns
+ns
+me=1378425746961
+cppdynamoserver: I0926 06:01:22.532336 834847 PowerReader.cpp:762] getPower succeeded! totalPower: 146.386, server power: 136.71
 
-CPUThreadPool26: E0313 09:20:08.619365 42669 ServiceHandler.cpp:70] (s3 fb_user 100000663391190) Reached max dependency checks (3)
-æª^K<85><88>?
-agent-helper: V0313 09:20:08.619328 42669 ServiceHandler.cpp:64] (s3 fb_user 100000663391190) Missing 2 dependencies
-E0313 09:20:08.619365 42669 ServiceHandler.cpp:70] (s3 fb_user 100000663391190) Reached max depe
-CPUThreadPool26: V0313 09:20:08.622006 42669 ServiceHandler.cpp:92] (s3 fb_user 100000663391190) Finished job
-À]¨]<v<9c><87>_-Êî)^\Kî^N^A^O<94><97>C<89><8a>¶ì@ñ·<84>¢<9d>W^C£<87>9t^Lûa¢Ìiæ~^Z54w=P¼C+2<88>êï^G^K,^XË^B^A^B^A^A^B^F
-^B
-agent-helper: V0313 09:20:08.622006 42669 ServiceHandler.cpp:92] (s3 fb_user 100000663391190) Finished job
-endencies
+Collection-27: D0926 06:01:22.535629 128492 SchedulerThread.cpp:144] SCHEDULABLE BEING REFIRED id=fb303:fg_policy:devbig042.lla2:::1:9176 interval=60000000000 ns offset=23946121169 ns now=@1378369106087589 ns fireTime=@1378369106021796 ns nextFireTime=1378429106021796 ns
+4 ns
+235 ns
+ns
+me=1378425746961
 ```
 
-A few things to note from the above example:
+A few things to note from the above script and example:
 
-- Owing to a current architectural limit in BPF, bpftrace restricts strings to be 64 bytes by default. We can increase these using the `BPFTRACE_STRLEN` environment variable to a maximum of 200 bytes.
+- Recent builds of bpftrace now have Big String support which supports working with strings up to 32KB in size. The default size is still 128 bytes and therefore the `max_string` tunable parameter has been tuned to 31KB in the `config` block.
 - `char *`'s must be explicitly converted to strings using the `str()` builtin.
 - The `comm` builtin gives us the name of the process doing the write call.
 - The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very small modification).
@@ -108,7 +111,7 @@ NOTE: before attempting the tasks in this section select the `syscalls` option f
 
 #### `mmap(2)`
 
-1. Locate the process doing the most mmap calls in a 30 second period (it should be obvious which one I'm on about :-) ).
+1. Locate the process doing the most mmap calls in a 30 second period (it should be obvious :-) ).
 1. What are the sizes of the segments being created?
 1. Can you tell what percentage of the created mappings are private to the process and which are shared?
 
