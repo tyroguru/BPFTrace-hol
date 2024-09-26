@@ -1,8 +1,10 @@
 ## The bpftrace language
 
-In this lab we will work through some of the key language features of bpftrace. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [bpftrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md) for details on all language features.
+bpftrace is a tracing tool for Linux which uses LLVM as a backend to compile bpfScript programs to eBPF-bytecode and makes use of libbpf and bcc for interacting with the Linux BPF subsystem, as well as existing Linux tracing capabilities: kernel dynamic tracing (kprobes), user-level dynamic tracing (uprobes), tracepoints, etc. 
 
-**bpftrace** is a language that is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
+In this lab we will work through some of the key features of bpftrace and its language which is known as `bpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
+
+**bpftrace** is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
 
 ## Dynamic Tracing - So What!??
 
@@ -21,15 +23,15 @@ bpftrace solves these problems by allowing us to dynamically modify our system t
 
 bpftrace scripts are made up of one or more *Action Blocks*. An action block contains 3 parts in the following order:
 
-* **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g., strcmp(3)), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
-* **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'hhvm' or is the file we are writing to located in `/tmp`. Predicates are contained in between two forward slash characters.
+* **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g, strcmp(3)), when a system call is executed (e.g, write(2), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
+* **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'bash' or is the file we are writing to located in `/tmp`. Predicates are contained in between two forward slash characters.
 * **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout. All actions are contained in between a pair of curly braces.
 
 An example action block looks like this:
 
 ```
 tracepoint:syscalls:sys_enter_write   /* The probe */
-/comm == "hhvm"/                      /* The predicate */
+/comm == "bash"/                      /* The predicate */
 {
   @[args->fd] = sum(args->count);     /* An action */
 }
@@ -49,12 +51,11 @@ Attaching 314 probes...
 
 ^C
 <output elided>
-@calls[tracepoint:syscalls:sys_enter_pread64]: 119249
-@calls[tracepoint:syscalls:sys_enter_munmap]: 152063
-@calls[tracepoint:syscalls:sys_enter_mmap]: 156844
-@calls[tracepoint:syscalls:sys_enter_close]: 302237
-@calls[tracepoint:syscalls:sys_enter_read]: 311111
-@calls[tracepoint:syscalls:sys_enter_futex]: 652906
+@calls[tracepoint:syscalls:sys_enter_futex]: 283681
+@calls[tracepoint:syscalls:sys_enter_openat]: 249219
+@calls[tracepoint:syscalls:sys_enter_newfstatat]: 240998
+@calls[tracepoint:syscalls:sys_enter_read]: 283535
+@calls[tracepoint:syscalls:sys_enter_close]: 351776
 ```
 
 Things to note:
@@ -64,61 +65,51 @@ Things to note:
 * We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g., `tracepoint:syscalls:sys_enter_futex`).
 * Each entry in a map can have one of a number of pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time we hit the probe and we therefore keep count of the number of times a probe has been hit.
 
-**IMPORTANT NOTE:** If you're running these examples on your devserver (we hope you are!) the order and number of system calls you see may well be different to the output given above. For the sake of this example we will focus on futex(2) calls.
+**IMPORTANT NOTE:** The order and number of system calls you see will be different to the output given above. For the sake of this example we will focus on futex(2) calls.
 
 [**NOTE:** maps are a key data structure that you'll use very frequently!]
 
-2. Now let's iterate using the data we just acquired to drill down and discover who is making those `futex` syscalls! Again, let's give it 15-20 seconds before issuing a `<ctrl-c>`:
+2. Now let's iterate using the data we just acquired to drill down and discover who is making those `close(2)` syscalls! Again, let's give it 15-20 seconds before issuing a `<ctrl-c>`:
 
 ```
-# bpftrace -e 'tracepoint:syscalls:sys_enter_futex{@calls[comm] = count();}'
+# bpftrace -e 'tracepoint:syscalls:sys_enter_close{@calls[comm] = count();}'
 Attaching 1 probe...
 ^C
 <output elided>
-@calls[rs:main Q:Reg]: 2999
-@calls[cfgator-sub]: 3866
-@calls[LadDxChannel]: 5869
-@calls[FS_DSSHander_GC]: 7586
+@calls[agent#native-ma]: 23337
+@calls[systemd-userwor]: 24859
+@calls[fb-oomd-cpp]: 31130
+@calls[below]: 36805
+@calls[FuncSched]: 43969
 ```
 
 Things to note:
 
-* We changed the probe specification as we are only interested in futex calls now
-* Instead of indexing by the probe name we now index by the name of the process making the futex syscall using the `comm` builtin variable.
+* We changed the probe specification as we are only interested in close calls now.
+* Instead of indexing by the probe name we now index by the name of the process making the close syscall using the `comm` builtin variable.
 
-1. The result of this tracing iteration tell us that a process named `FS_DSSHander_GC` is making the most `futex()` calls so we may want to drill down this process to see where in the code these calls are being made from
+1. The result of this tracing iteration tell us that a process named `FuncSched` is making the most `close` calls so we may want to drill down this process to see where in the code these calls are being made from:
 
 ```
-# bpftrace -e 'tracepoint:syscalls:sys_enter_futex /comm == "FS_DSSHander_GC"/
+# bpftrace -e 'tracepoint:syscalls:sys_enter_close /comm == "FuncSched"/
 {
   @calls[ustack] = count();
 }'
 Attaching 1 probe...
 ^C
-
+<output elided>
 @calls[
-    __lll_unlock_wake+26
-    execute_native_thread_routine+16
-    start_thread+222
-    __clone+63
-]: 20
-@calls[
-    pthread_cond_timedwait@@GLIBC_2.3.2+870
-    std::thread::_State_impl<std::thread::_Invoker<std::tuple<folly::FunctionScheduler::start()::$_2> > >::_M_run()+1625
-    execute_native_thread_routine+16
-    start_thread+222
-    __clone+63
-]: 20
-@calls[
-    syscall+25
-    facebook::lad::LadMPSCQueue<folly::CPUThreadPoolExecutor::CPUTask>::add(folly::CPUThreadPoolExecutor::CPUTask)+1099
-    folly::CPUThreadPoolExecutor::add(folly::Function<void ()>)+409
-    void folly::detail::function::FunctionTraits<void ()>::callSmall<facebook::lad::DataSourceServiceHandler::init()::$_6>(folly::detail::function::Data&)+477
-    std::thread::_State_impl<std::thread::_Invoker<std::tuple<folly::FunctionScheduler::start()::$_2> > >::_M_run()+1640
-    execute_native_thread_routine+16
-    start_thread+222
-    __clone+63
-]: 507
+    __GI___close+61
+    facebook::pid_info::PidInfo::readEnvironmentForPid(int, std::filesystem::__cxx11::path const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::unordered_map<std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::hash<std::basic_string_view<char, std::char_traits<char> > >, std::equal_to<std::basic_string_view<char, std::char_traits<char> > >, std::allocator<std::pair<std::basic_string_view<char, std::char_traits<char> > const, std::basic_string_view<char, std::char_traits<char> > > > >&)+736
+    facebook::pid_info::PidInfo::getServiceIDForPid(int, std::filesystem::__cxx11::path const&)+1302
+    facebook::dynolog::threadmon::ThreadMonitor::getAllServiceIDs[abi:cxx11]()+883
+    facebook::dynolog::SAHResolver::resolveAndWrite(std::optional<std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::set<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const*)+745
+    void folly::detail::function::call_<std::_Bind<void (facebook::dynolog::SAHResolver::*(facebook::dynolog::SAHResolver*, std::nullopt_t, decltype(nullptr)))(std::optional<std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&, std::set<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const*)>, true, false, void>(, folly::detail::function::Data&)+52
+    std::thread::_State_impl<std::thread::_Invoker<std::tuple<folly::FunctionScheduler::start()::$_0> > >::_M_run() [clone .__uniq.292305056905277424697830817796292569046]+1046
+    execute_native_thread_routine+21
+    start_thread+569
+    __clone3+44
+]: 3101
 ```
 
 ### Exercises
@@ -132,10 +123,10 @@ We often want to periodically display data held in aggregations and this can be 
 ```
 # bpftrace -e 'interval:s:10 { time("%c\n"); }'
 Attaching 1 probe...
-Fri Apr 26 08:26:27 2019
-Fri Apr 26 08:26:37 2019
-Fri Apr 26 08:26:47 2019
-Fri Apr 26 08:26:57 2019
+Thu Sep 26 10:18:35 2024
+Thu Sep 26 10:18:45 2024
+Thu Sep 26 10:18:55 2024
+Thu Sep 26 10:19:05 2024
 ```
 
 Now expand the script written previously to print the per-process system call counts every 10 seconds.
@@ -187,7 +178,7 @@ Things to note:
 
 ### Exercise
 
-1. Pick a thread from cppfbagentd and also one of the system calls that it makes. Write a script to time the calls and print the result using `printf`.
+1. Pick a thread from a process on your system and also one of the system calls that it makes. Write a script to time the calls and print the result using `printf`.
 1. Use the `hist()` aggregating function to track the range of times taken by this syscall.
 1. Now add the `max()` and `min()` functions in to track the lowest to highest times.
 1. Can you think of how you might dump the stack of a thread when it hits a new highest time value? Implement it.
@@ -199,3 +190,7 @@ Note that the `interval` based probes we have used previously only fire on a sin
 1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 10 millisecond `profile` probe (profile:ms:10)  to count the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
 
 Now that we've covered some of the basic building blocks of bpftrace, we'll continue the voyage of discovery by looking at the fundamental interface between userland code and the kernel: the [system call](syscalls.pdf).
+
+## Further Reading
+
+ [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)
