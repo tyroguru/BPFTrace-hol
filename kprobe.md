@@ -285,9 +285,10 @@ tracepoint:lock:contention_end
 
 Expand the lock contention script to include the following functionality:
 1. Make the block duration threshold time (currently set to 100 microsecs) into a parameter passed into the script.
-2. For locks that exceed the threshold duration, instead of printing information, store the block time into a map named `long_block_times` and use the hist() action and indexed using the lock addressed.
-3. Add an END probe where you print out the `@long_block_times` map but not the anonymous map used to calculate the results.
-4. If time allows, instead of printing the `@long_block_times` map, iterate over the map using a `for()` loop to iterate over the map and print each entry. (XXX "Loop expression does not support type: hist" XXX .
+1. For locks that exceed the threshold duration, instead of printing information, store the block time into a map named `long_block_times` and use the hist() action and indexed using the lock addressed.
+1. Add an END probe where you print out the `@long_block_times` map but not the anonymous map used to calculate the results.
+1. If time allows, instead of printing the `@long_block_times` map, iterate over the map using a `for()` loop to iterate over the map and print each entry. (XXX "Loop expression does not support type: hist" XXX .
+1. using the flag definitions for `args.flags` in `include/trace/events/lock.h`, modify the script to print which type of lock is being dealt with.
 
 
 The following 3 articles contain everything you need to know about how to define your own tracepoints:
