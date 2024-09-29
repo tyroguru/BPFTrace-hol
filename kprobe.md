@@ -7,8 +7,8 @@ probe types:
 not have overhead when disabled and minimal overhead when enabled. 
 - *kfunc*, this provides essentially the same functionality as a 'kprobe'
 but with the big advantage of having fully typed arguments using the kernel's
-BTF type system. (*kfunc* as a probe name is not to be confused with the BPF
-kernel functions known as *kfuncs*. These are regular kernel functions that are
+BTF type system. *kfunc* as a probe name is not to be confused with the BPF
+kernel functions known as *kfuncs* which are regular kernel functions that are
 exposed for use by bpf programs (https://docs.kernel.org/bpf/kfuncs.html) . *kfunc*
 when used as a name for a probe is a synonym for *fentry* kernel functions. The
 probe name of *kfunc* probably originated in bcc but that's not important really for now. 
@@ -18,17 +18,37 @@ arguments.
 - *rawtracepoint*, these are essentially identical in terms of functionality to a *tracepoint* probe. The only difference is that rawtracepoint offers raw arguments to the tracepoint while tracepoint provide named arguments that are typed.
 
 
+### A side note: navigating kernel structs and type information
+
+When writing tracing scripts we often need to reach into structures to extract
+structure members that we are interested in at that specific point in execution.
+A previous version of this lab demonstrated how to use the `pahole` tool to look
+at the kernel type definitions and I've preserved that information at the bottom of this
+section for posterity [ XXX - link] . This lab assumes that the kernel you are
+running on has type information available via the BTF type subsystem. To verify
+BTF is available on your system:
+
+```
+ bpftrace --info |& grep -i btf
+  btf: yes
+  module btf: yes
+```
+
+Of course you could use the kernel source code but the BTF on your system is
+the **exact** type definitions for the objects found on your system so you
+should use that if possible.
+
 ### Examine available probe points
 
 A significant amount of kernel functions are available to be traced but not all of them. The primary reason why a function may not be available is because it has been inlined by the compiler and, currently, bpftrace cannot expose inlined functions. (Work is currently ongoing to expose inlined functions).
 
-### bpftrace -l
-
-`bpftrace -l` lists all available dynamic and static kernel probes, where a
+As has been seen previously, `bpftrace -l` lists all available dynamic and static kernel probes, where a
 probe is an instrumentation point for capturing event data. `bpftrace -l`
 takes an optional search parameter. Wildcarded search parameters are supported.
 
-For example, to list all available kernel functions beginning with the pattern `vfs_` and displaying their input and return parameter types:
+## kfunc probes
+
+For example, to list all available kernel functions beginning with the pattern `vfs_` and displaying their input and return parameter types we can specifiy a wildcard search wuth `kfunc` probes:
 
 ```
 # bpftrace -lv 'kfunc:vfs_*'
@@ -172,14 +192,14 @@ carbon-global-s libmcrouter.hhvm.web.config_sources_info.temp-0IDMBUC0nr
 blkid blkid.tab.old
 ```
 
-Challenge: Expand the above script to print the parent directory for the file being unlinked.
+Exercise: Expand the above script to print the parent directory for the file being unlinked.
 
 
 XXX kprobe - talk about how to access per instruction offsets and give example. That's the only real reason why you would use them I think over kfuncs.
 
-### tracing return values with kretval
+### Examining return values with kretfunc
 
-The typed return argument from a function is available through the `retval` variable in a `kretfunc` probe. An example lifted straight from the bpftrace docs displays how easy it is to use with the kernel fget() function. This function returns a 'struct file' for a given file descriptor so we can use that to 
+The typed return argument from a function is available through the `retval` variable in a `kretfunc` probe. The following example displays how easy it is to use with the kernel fget() function. This function returns a 'struct file' for a given file descriptor so we can use that to 
 
 ```
 $ bpftrace -lv 'kretfunc:fget'
@@ -207,153 +227,74 @@ sudo (fd8):  libcrack.so.2.9.0
 
 ### kprobe/kretprobe and their arguments
 
-A key feature of `kprobe`s is that we get access to the arguments via reserved
-keywords `arg0`, `arg1`, `...`,  `argN`. For example, the kernel function `vfs_write` is defined as:
+`kprobe' probes arguments are not typed and therefore, for most use cases, the newer typed `kfunc` probes that we have described above should be used. One area that the kprobe has unique functionality is its ability to probe individiual kernel instruction sites and not just function entry and return locations as with `kfunc` probes.
+
+Example.
+
+## Static tracepoints
+
+Tracepoint probes are static probes: they aren't generated dynamically and they are defined in the kernel source itself. The advantage of this over dynamic probes is that they tend to provide a more stable interface.
+
+On a typical system we have in the order of more than 2000 static tracepoints. Give themn an eyeball for yourself by inspecting the output of ` bpftrace -l 'tracepoint:*`.
+
+In order to understand how we can use tracepoints we'll look at a couple of them which are designed to be used in a pair in order to understand kernel lock contention:
 
 ```
-ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
+$ sudo bpftrace -lv 'tracepoint:lock:contention*'
+tracepoint:lock:contention_begin
+    void * lock_addr
+    unsigned int flags
+tracepoint:lock:contention_end
+    void * lock_addr
+    int ret
 ```
 
-and therefore the arguments are available to us as:
+The semantics of a probe should be encoded into its name and that is definitely the case here as we have one probe that fires when a contention event for a synchronisation primitive starts and one for when it ends. Let's develop a script that tracks contention times on locks. Start by recording the time when a lock contention event begins:
 
 ```
-  arg0 - struct file*
-  arg1 - const char*
-  arg2 - ssize_t count
-  arg3 - loff_t *pos
-```
-
-However, a big caveat with accessing parameters is that the Linux kernel doesn't currently have any type information exposed to BPF that bpftrace can use. Therefore we must `#include` the appropriate header files to access the required definitions. For example, to access a `file*` typed argument we need to `#include linux/fs.h> to obtain the structure definition. This should hopefully be fixed in the longer term with the [BTF project](https://facebookmicrosites.github.io/bpf/blog/2018/11/14/btf-enhancement.html) which aims to put type information in the kernel that is always accessible.
-
-
-Although not listed in `bpftrace -l`, every `kprobe` has a corresponding `kretprobe`.
-`kretprobes` are exactly the same as `kprobe`s with the difference being `kretprobe`s
-are fired _after_ a function returns. Because of this, we get access to the return
-value in reserved keyword `retval`.
-
-### Hands on: find and verify a symbol
-
-In `kernel/cgroup/cgroup.c`:
-
-```
-/* subsystems visibly enabled on a cgroup */
-static u16 cgroup_control(struct cgroup *cgrp)
+tracepoint:lock:contention_begin
 {
-        struct cgroup *parent = cgroup_parent(cgrp);
-        u16 root_ss_mask = cgrp->root->subsys_mask;
-        ...
+  @[tid, args.lock_addr] = nsecs;
 }
-```
-
-Now check `bpftrace -l`:
 
 ```
-# bpftrace -l | grep cgroup_control
-kprobe:cgroup_control
-kprobe:cgroup_controllers_show
-```
 
-### Hands on: See how often the cgroup2 filesystem is being used:
+- When a `contention_begin` probe fires we record the nanosecond timestamp when the event occurred. Note that we use the thread id (`tid`) together with the lock address to create a unique key for the aggregation. What we be the problem by just using the lock address?
+
+Now expand the script to process when a contention event ends:
 
 ```
-$ cat cgroup2.bt
-#include <linux/kernfs.h>
-#include <linux/fs.h>
-
-kprobe:cgroup_file_open
+tracepoint:lock:contention_end
+/@[tid, args.lock_addr] != 0/
 {
-  if (((kernfs_open_file*)arg0)->file->f_inode->i_sb->s_magic == 0x63677270) {
-    printf("cgroup2 magic detected\n");
+  $lock_duration = nsecs - @[tid, args.lock_addr];
+  if ($lock_duration > 1000*100) { /* block duration threshold time -  100 microsecs */
+    printf("contended time: %lld\n", $lock_duration);
   }
-}
-
-# bpftrace cgroup2.bt
-Attaching 1 probe...
-cgroup2 magic detected
-cgroup2 magic detected
-cgroup2 magic detected
-cgroup2 magic detected
-cgroup2 magic detected
-^C
-
-```
-
-### Hands on: navigating kernel structs
-
-When writing tracing scripts we often need to reach into structures to extract
-structure members that we are interested in at that specific point in execution.
-A previous version of this lab demonstrated how to use the `pahole` tool to look
-at the type definitions and I've preserved that information at the bottom of this
-section for posterity [ XXX - link] . This lab assumes that the kernel you are
-running on has type information available via the BTF type subsystem. To verify
-BTF is available on your system:
-
-```
- bpftrace --info |& grep -i btf
-  btf: yes
-  module btf: yes
-```
-
-Of course you could use the kernel source code but the BTF on your system is
-the **exact** type definitions for the objects found on your system so you
-should use that if possible.
-
-
-
-First install the dwarves tools:
-```
-# yum install dwarves
-```
-
-In the previous exercise, we reached deep inside a bunch of structs. It might seem
-hard to discover the right members, but there are fairly structured approaches you
-can take.
-
-Take for example the previous function, `cgroup_file_open`:
-```
-static int cgroup_file_open(struct kernfs_open_file *of)
-{
-        struct cftype *cft = of->kn->priv;
-
-        if (cft->open)
-                return cft->open(of);
-        return 0;
+  delete(@[tid, args.lock_addr]);
 }
 ```
 
-We can discover the members of `struct kernfs_open_file` like so:
-```
-$ pahole -C kernfs_open_file
-struct kernfs_open_file {
-        struct kernfs_node * kn;                         /*     0     8 */
-        struct file        * file;                       /*     8     8 */
-        struct seq_file    * seq_file;                   /*    16     8 */
-        void *                     priv;                 /*    24     8 */
-        struct mutex       mutex;                        /*    32    32 */
-        /* --- cacheline 1 boundary (64 bytes) --- */
-        struct mutex       prealloc_mutex;               /*    64    32 */
-        int                        event;                /*    96     4 */
-...
-```
-
-To explore deeper into `struct file`:
-```
-$ pahole -C file
-struct file {
-        union {
-                struct llist_node fu_llist;              /*     0     8 */
-                struct callback_head fu_rcuhead __attribute__((__aligned__(8))); /*     0    16 */
-        } f_u __attribute__((__aligned__(8)));                                           /*     0    16 */
-        struct path        f_path;                       /*    16    16 */
-        struct inode       * f_inode;                    /*    32     8 */
-...
-```
-
-And so forth. Note that `pahole` might not work out-of-the-box on non-devservers.
-It appears `pahole` needs a non-compressed linux image (ie `/boot/vmlinux-*` vs
-`/boot/vmlinuz-*`) to look up symbols.
+- The predicate ensures that we only process `contention_end` probes if we have first gone through the `contention_begin` probe.
+- The lock duration is stored in a local variable and if the block duration was > 100 microsec we print lock address and the block time.
+- We delete the entry just processed with the `delete()` builtin function.
 
 ---
+
+## Exercises
+
+Expand the lock contention script to include the following functionality:
+1. Make the block duration threshold time (currently set to 100 microsecs) into a parameter passed into the script.
+2. For locks that exceed the threshold duration, instead of printing information, store the block time into a map named `long_block_times` and use the hist() action and indexed using the lock addressed.
+3. Add an END probe where you print out the `@long_block_times` map but not the anonymous map used to calculate the results.
+4. If time allows, instead of printing the `@long_block_times` map, iterate over the map using a `for()` loop to iterate over the map and print each entry. (XXX "Loop expression does not support type: hist" XXX .
+
+
+The following 3 articles contain everything you need to know about how to define your own tracepoints:
+
+https://lwn.net/Articles/379903/
+https://lwn.net/Articles/381064/
+https://lwn.net/Articles/383362/
 
 ## Exercises
 

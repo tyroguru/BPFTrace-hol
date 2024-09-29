@@ -1,7 +1,5 @@
 ## The bpftrace language
 
-bpftrace is a tracing tool for Linux which uses LLVM as a backend to compile bpfScript programs to eBPF-bytecode and makes use of libbpf and bcc for interacting with the Linux BPF subsystem, as well as existing Linux tracing capabilities: kernel dynamic tracing (kprobes), user-level dynamic tracing (uprobes), tracepoints, etc. 
-
 In this lab we will work through some of the key features of bpftrace and its language which is known as `bpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
 
 **bpftrace** is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
@@ -21,9 +19,9 @@ bpftrace solves these problems by allowing us to dynamically modify our system t
 
 ## Action Blocks
 
-bpftrace scripts are made up of one or more *Action Blocks*. An action block contains 3 parts in the following order:
+bpftrace scripts (written in the *bpfScript* tracing language) are made up of one or more *Action Blocks*. An action block contains 3 parts in the following order:
 
-* **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g, strcmp(3)), when a system call is executed (e.g, write(2), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
+* **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g, strcmp(3)), when a system call is executed (e.g, write(2)), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
 * **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'bash' or is the file we are writing to located in `/tmp`. Predicates are contained in between two forward slash characters.
 * **Actions to record data** . Actions are numerous and mostly capture data that we are interested in. Examples of such actions may be recording the contents of a buffer, capturing a stack trace, or simply printing the current time to stdout. All actions are contained in between a pair of curly braces.
 
@@ -138,7 +136,7 @@ Now expand the script written previously to print the per-process system call co
 
 ## pid's, tid's and names
 
-Process and thread identifiers are something we come across a lot when trying to track behaviour of our code. It's important to understand exactly what is referred to here especially within Facebook where we have many multi-threaded processes:
+Process and thread identifiers are something we come across a lot when trying to track behaviour of our code. It's important to understand exactly what is referred to here especially within Meta where we have many multi-threaded processes:
 
 - `pid`: The *process id* is constant for every thread in a process - this is the identifier given to the very first thread in the process and is referred to in Linux as the tgid (Thread Group Id).
 - `tid`: every thread is given a *thread id* to uniquely identify it. This is confusingly referred to in Linux as the threads PID.
@@ -193,4 +191,4 @@ Now that we've covered some of the basic building blocks of bpftrace, we'll cont
 
 ## Further Reading
 
- [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)
+ * [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)

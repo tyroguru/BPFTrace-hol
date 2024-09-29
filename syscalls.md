@@ -1,4 +1,4 @@
-## System Call Tracing
+# System Call Tracing
 
 In this lab you will experiment with tracing system call interfaces. As this is the primary mechanism with which a process interacts with the kernel, it can often be of interest when investigating systemic and/or application behavior.
 
@@ -17,7 +17,7 @@ tracepoint:syscalls:sys_enter_adjtimex
 You should have in excess of 300 system calls to choose from!
 
 
-### Syscall probe naming format
+## Syscall probe naming format
 
 Each syscall has two distinct probes: an **enter** probe which is fired when a system call is called and an **exit** probe which is fired on return from a system call. The format of the two different types of syscall probe are:
 
@@ -36,11 +36,11 @@ tracepoint:syscalls:sys_exit_open
 **Question:** Does `t:syscalls:sys_exit_exit` exist? Is so, when will it fire?
 
 
-### Probe arguments
+## Probe arguments
 
-#### Entry probes:
+### Entry probes:
 
-The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for write(2), the syscall has 3 arguments: `int fd`, `void* buf` and `size_t count`. We can verify that with the `-lv` options to `bpftrace`:
+The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for `write(2)`, the syscall has 3 arguments: `int fd`, `const void buf` and `size_t count`. We can verify that with the `-lv` options to `bpftrace`:
 
 ```
 # bpftrace -lv t:syscalls:sys_enter_write
@@ -52,16 +52,16 @@ tracepoint:syscalls:sys_enter_write
 ```
 
 A few things to note:
-    - We've used the abbreviated name for `tracepoint` above - simply "`t`".
+    - We've used the abbreviated name for `tracepoint` above - simply "`t`". Every probe type has an abbreviated format.
     - You can ignore the `__attribute__` tag on the `buf` parameter. This is kernel implementation detail you don't need to worry about.
     - Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. Again, this is just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
 
-To access an argument, we reference it through the `args` built-in using its name, e.g., `args->buf`. In the following example we capture the first 200 bytes (or less) of any buffer being sent to file descriptor 2 which is usually `stderr`
+To access an argument, we reference it through the `args` builtin using its name, e.g, `args->buf`. In the following example we capture the first ~32KB bytes (or less) of any buffer being sent to file descriptor 2 which is usually `stderr` (although it's obviously not guaranteed to be that).
 
 ```
 # cat write.bt
 config = {
-  max_strlen = 31744; /* 31KB*/
+  max_strlen = 31744; /* ~32KB*/
 }
 
 /* fd 2 might not be a processes stderr but it's good fun nonetheless */
@@ -93,7 +93,7 @@ A few things to note from the above script and example:
 - The `comm` builtin gives us the name of the process doing the write call.
 - The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very small modification).
 
-#### Return probes:
+### Return probes:
 
 As with any C function, we only have a single return value from a syscall. As an exercise, compare the return codes specified in the man pages with the output of `bpftrace -lv` for the following syscalls exit probes:
 
@@ -130,4 +130,4 @@ In the next section we take a dive into the kernel for [kprobes](kprobe.pdf).
 
 ## Further Reading
 
-* [https://www.kernel.org/doc/html/latest/process/adding-syscalls.html](Adding a New System Call)
+* [Adding a New System Call](https://www.kernel.org/doc/html/latest/process/adding-syscalls.html)
