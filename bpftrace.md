@@ -63,7 +63,7 @@ Things to note:
 * We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g., `tracepoint:syscalls:sys_enter_futex`).
 * Each entry in a map can have one of a number of pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time we hit the probe and we therefore keep count of the number of times a probe has been hit.
 
-**IMPORTANT NOTE:** The order and number of system calls you see will be different to the output given above. For the sake of this example we will focus on futex(2) calls.
+**IMPORTANT NOTE:** The order and number of system calls you see will be different to the output given above. For the sake of this example we will focus on `close()` calls.
 
 [**NOTE:** maps are a key data structure that you'll use very frequently!]
 
@@ -86,7 +86,7 @@ Things to note:
 * We changed the probe specification as we are only interested in close calls now.
 * Instead of indexing by the probe name we now index by the name of the process making the close syscall using the `comm` builtin variable.
 
-1. The result of this tracing iteration tell us that a process named `FuncSched` is making the most `close` calls so we may want to drill down this process to see where in the code these calls are being made from:
+The result of this tracing iteration tell us that a process named `FuncSched` is making the most `close` calls so we may want to drill down this process to see where in the code these calls are being made from:
 
 ```
 # bpftrace -e 'tracepoint:syscalls:sys_enter_close /comm == "FuncSched"/
@@ -110,11 +110,13 @@ Attaching 1 probe...
 ]: 3101
 ```
 
+Things to note:
+
+* We now keep a count of the number of times a unique stack trace was seen for each close syscall by using the `ustack` builtin to index a map and using the `count()` map function for value.
+
 ### Exercises
 
 1. Write a script to keep count of the number of system calls each process makes. (In addition to count(), try using the sum() aggregating function and/or the `++` increment operator).
-
-1. Next we will expand the above script to display the per-process system call counts every 10 seconds but first we will quickly look at periodic timers.
 
 We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
 
@@ -127,8 +129,9 @@ Thu Sep 26 10:18:55 2024
 Thu Sep 26 10:19:05 2024
 ```
 
-Now expand the script written previously to print the per-process system call counts every 10 seconds.
+### Exercises
 
+1. Expand the script written previously to print the per-process system call counts every 10 seconds.
 1. Add the ability to only display the top 10 per process counts (hint: use the `print` action)
 1. Delete all per-process syscall stats every 10 secs (hint: use the `clear` action);
 1. Finally, exit the script after 3 iterations (or 30 seconds if you prefer it that way)
@@ -136,7 +139,7 @@ Now expand the script written previously to print the per-process system call co
 
 ## pid's, tid's and names
 
-Process and thread identifiers are something we come across a lot when trying to track behaviour of our code. It's important to understand exactly what is referred to here especially within Meta where we have many multi-threaded processes:
+Process and thread identifiers are something we come across a lot when trying to track behaviour of our code. It's important to understand exactly what is referred to here when dealing with multi-threaded processes:
 
 - `pid`: The *process id* is constant for every thread in a process - this is the identifier given to the very first thread in the process and is referred to in Linux as the tgid (Thread Group Id).
 - `tid`: every thread is given a *thread id* to uniquely identify it. This is confusingly referred to in Linux as the threads PID.
@@ -144,7 +147,7 @@ Process and thread identifiers are something we come across a lot when trying to
 
 ### Exercise
 
-Let's look at the `cppfbagentd` WDB process as an example:
+Let's look at the `cppfbagentd` process as an example:
 
 1. Count the syscalls made by each `<pid, tid, comm>` tuple for every thread in the main cppfbagentd process (use "`pgrep -f cppfbagentd`" to find the main process pid and predicate using that),
 2. Target a particular tid discovered previously and keep a count of the individual syscalls it makes.

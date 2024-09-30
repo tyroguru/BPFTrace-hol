@@ -51,10 +51,11 @@ tracepoint:syscalls:sys_enter_write
     size_t count
 ```
 
-A few things to note:
-    - We've used the abbreviated name for `tracepoint` above - simply "`t`". Every probe type has an abbreviated format.
-    - You can ignore the `__attribute__` tag on the `buf` parameter. This is kernel implementation detail you don't need to worry about.
-    - Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. Again, this is just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
+Things to note:
+
+* We've used the abbreviated name for `tracepoint` above - simply "`t`". Every probe type has an abbreviated format.
+* You can ignore the `__attribute__` tag on the `buf` parameter. This is kernel implementation detail you don't need to worry about.
+* Those with a keen eye may have noted that we have an extra parameter - `int __syscall_nr`. Again, this is just an implementation detail that has been exposed to you and you'll probably have little use for it. It's the system call number assigned to this system call in the kernel (more detail in "Further Reading" - see below)
 
 To access an argument, we reference it through the `args` builtin using its name, e.g, `args->buf`. In the following example we capture the first ~32KB bytes (or less) of any buffer being sent to file descriptor 2 which is usually `stderr` (although it's obviously not guaranteed to be that).
 
@@ -86,12 +87,12 @@ ns
 me=1378425746961
 ```
 
-A few things to note from the above script and example:
+Things to note:
 
-- Recent builds of bpftrace now have Big String support which supports working with strings up to 32KB in size. The default size is still 128 bytes and therefore the `max_string` tunable parameter has been tuned to 31KB in the `config` block.
-- `char *`'s must be explicitly converted to strings using the `str()` builtin.
-- The `comm` builtin gives us the name of the process doing the write call.
-- The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very small modification).
+* Recent builds of bpftrace now have Big String support which supports working with strings up to 32KB in size. The default size is still 128 bytes and therefore the `max_string` tunable parameter has been tuned to 31KB in the `config` block.
+* `char *`'s must be explicitly converted to strings using the `str()` builtin.
+* The `comm` builtin gives us the name of the process doing the write call.
+* The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very small modification).
 
 ### Return probes:
 
