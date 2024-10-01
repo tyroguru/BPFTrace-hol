@@ -1,6 +1,6 @@
-## The bpftrace language
+# bpftrace
 
-In this lab we will work through some of the key features of bpftrace and its language which is known as `bpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. I refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
+In this lab we will work through some of the key features of the bpftrace tracing technology and its language which is known as `bpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. Please refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
 
 **bpftrace** is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
 
@@ -49,9 +49,9 @@ Attaching 314 probes...
 
 ^C
 <output elided>
-@calls[tracepoint:syscalls:sys_enter_futex]: 283681
 @calls[tracepoint:syscalls:sys_enter_openat]: 249219
 @calls[tracepoint:syscalls:sys_enter_newfstatat]: 240998
+@calls[tracepoint:syscalls:sys_enter_futex]: 283681
 @calls[tracepoint:syscalls:sys_enter_read]: 283535
 @calls[tracepoint:syscalls:sys_enter_close]: 351776
 ```
@@ -60,12 +60,12 @@ Things to note:
 
 * We use a wildcard (`*`) to pattern match all the system call entry probes.
 * `@calls[]` declares a special type of associative array (known as a *map* or an *aggregation*). We didn't have to name the associative array as we only have one - we could have just used the `@` sign on its own (known as the `anonymous array`).
-* We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g., `tracepoint:syscalls:sys_enter_futex`).
+* We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g, `tracepoint:syscalls:sys_enter_futex`).
 * Each entry in a map can have one of a number of pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time we hit the probe and we therefore keep count of the number of times a probe has been hit.
 
-**IMPORTANT NOTE:** The order and number of system calls you see will be different to the output given above. For the sake of this example we will focus on `close()` calls.
+**NOTE:** The order and number of system calls you see will be different to the output given above. For the sake of this example we will focus on `close()` calls.
 
-[**NOTE:** maps are a key data structure that you'll use very frequently!]
+**NOTE:** maps are a key data structure that you'll use very frequently!
 
 2. Now let's iterate using the data we just acquired to drill down and discover who is making those `close(2)` syscalls! Again, let's give it 15-20 seconds before issuing a `<ctrl-c>`:
 
@@ -117,6 +117,9 @@ Things to note:
 ### Exercises
 
 1. Write a script to keep count of the number of system calls each process makes. (In addition to count(), try using the sum() aggregating function and/or the `++` increment operator).
+
+
+## Timers
 
 We often want to periodically display data held in aggregations and this can be done with the `interval` probes which provide periodic interval timers. For example, to print the date and time every 10 seconds:
 

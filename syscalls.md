@@ -36,9 +36,7 @@ tracepoint:syscalls:sys_exit_open
 **Question:** Does `t:syscalls:sys_exit_exit` exist? Is so, when will it fire?
 
 
-## Probe arguments
-
-### Entry probes:
+## Syscall Entry probes:
 
 The arguments for a system call probe are made available through the builtin `args` structure. For example, according to the man page for `write(2)`, the syscall has 3 arguments: `int fd`, `const void buf` and `size_t count`. We can verify that with the `-lv` options to `bpftrace`:
 
@@ -94,7 +92,7 @@ Things to note:
 * The `comm` builtin gives us the name of the process doing the write call.
 * The output of multiple threads is interleaved. **Question**: can you think of another way of writing the script to obtain non-interleaved output? (HINT: it's a very small modification).
 
-### Return probes:
+## Syscall Return probes:
 
 As with any C function, we only have a single return value from a syscall. As an exercise, compare the return codes specified in the man pages with the output of `bpftrace -lv` for the following syscalls exit probes:
 

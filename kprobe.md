@@ -13,7 +13,7 @@ exposed for use by bpf programs](https://docs.kernel.org/bpf/kfuncs.html) . *kfu
 when used as a name for a probe is a synonym for *fentry* kernel functions. The
 probe name of *kfunc* probably originated in bcc but that's not important really for now. 
 - *tracepoint*: statically defined probe sites in the Linux kernel source code. Tracepoints
-are more stable than dynamic probes both in terms of probe naming but also in their
+are more stable than dynamic probes both in terms of probe naming and also in their
 arguments.
 - *rawtracepoint*: essentially identical in terms of functionality to a *tracepoint* probe. The only difference is that rawtracepoint offers access to raw arguments instead of typed arguments.
 
@@ -35,7 +35,7 @@ Of course you could use the kernel source code but the BTF on your system provid
 the **exact** type definitions for the objects found on your system so you
 should use that if possible.
 
-### Examine available probe points
+### A side note: available probe points
 
 A significant amount of kernel functions are available to be traced but not all of them. The primary reason why a function may not be available is because it has been inlined by the compiler and, currently, bpftrace cannot expose inlined functions. (Work is currently ongoing to expose inlined functions).
 
@@ -69,7 +69,7 @@ kfunc:vmlinux:vfs_write
 <chop>
 ```
 
-Let's take the *vfs_unlink* shown above and see if we can extract the name of a
+Let's take the *vfs_unlink* probe shown above and see if we can extract the name of a
 file being removed (unlinked from its parent directory). The directory entry being
 unlinked is stored under the `dentry` parameter:
 
@@ -120,18 +120,18 @@ struct qstr {
 ```
 
 Using the types shown above we can simply dereference the members from the initial `dentry` argument to extract the name.  Note: a kfunc probes arguments are presented in the *args* variable and we access them
-using the parameter name they have in the source code, e.g., `args.dentry` in this case to access the 'struct dentry` parameter.
+using the parameter name they have in the source code, e.g, `args.dentry` in this case to access the 'struct dentry` parameter.
 
 Let's now see what files are being unlinked. Along with the file we print the name of the userland thread issuing the unlink:
 
 ```
-$ cat vfs_unlink.bt
+# cat vfs_unlink.bt
 kfunc:vfs_unlink
 {
   printf("%s %s\n", comm, str(args.dentry->d_name.name));
 }
 
-$ bpftrace ./vfs_unlink.bt
+# bpftrace ./vfs_unlink.bt
 Attaching 1 probe...
 systemd-journal system@3274dec3739849b1a6f31a597646aa6c-0000000018d30c31-000622..
 chefctl chef.cur.out
@@ -149,9 +149,11 @@ carbon-global-s libmcrouter.hhvm.web.config_sources_info.temp-0IDMBUC0nr
 blkid blkid.tab.old
 ```
 
-Exercise: Expand the above script to print the parent directory for the file being unlinked.
+## Exercises
 
-Top tip: We can use the `print()` bpfscript function to print out member in an object without explicitly specifying them. For example, the arguments for a `vfs_write()` call are:
+1. Expand the above script to print the parent directory for the file being unlinked. Hint: xxx
+
+Top tip: We can use the `print()` bpfscript function to print out members in an object without explicitly specifying them. For example, the arguments for a `vfs_write()` call are:
 
 ```
 $ bpftrace -lv 'kfunc:vfs_write'
@@ -192,12 +194,12 @@ Attaching 1 probe...
 The typed return argument from a function is available through the `retval` variable in a `kretfunc` probe. The following example displays how easy it is to use with the kernel `fget()` function. This function returns a 'struct file' for a given file descriptor so we can use that to 
 
 ```
-$ bpftrace -lv 'kretfunc:fget'
+# bpftrace -lv 'kretfunc:fget'
 kretfunc:vmlinux:fget
     unsigned int fd
     struct file * retval
 
-$ cat fget.bt
+# cat fget.bt
 kretfunc:fget
 /retval/
 {
@@ -206,7 +208,7 @@ kretfunc:fget
   }
 }
 
-$ bpftrace ./fget.bt
+# bpftrace ./fget.bt
 Attaching 1 probe...
 sudo (fd8):  libcrack.so.2.9.0
 sudo (fd8):  libcrack.so.2.9.0
@@ -232,7 +234,7 @@ On a typical system we have in the order of more than 2000 static tracepoints. G
 In order to understand how we can use tracepoints we'll look at a couple of them which are designed to be used in a pair in order to understand kernel lock contention:
 
 ```
-$ sudo bpftrace -lv 'tracepoint:lock:contention*'
+# sudo bpftrace -lv 'tracepoint:lock:contention*'
 tracepoint:lock:contention_begin
     void * lock_addr
     unsigned int flags
@@ -280,6 +282,7 @@ Things to note:
 ## Exercises
 
 Expand the lock contention script to include the following functionality:
+
 1. Make the block duration threshold time (currently set to 100 microsecs) into a parameter passed into the script.
 1. For locks that exceed the threshold duration, instead of printing information, store the block time into a map named `long_block_times` and use the hist() action and indexed using the lock addressed.
 1. Add an END probe where you print out the `@long_block_times` map but not the anonymous map used to calculate the results.
