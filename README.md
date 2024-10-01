@@ -103,13 +103,21 @@ Example solutions for all lab exercises are provided in the [solutions document]
 Please use your instructor to discuss any issues or problems you may have. Everyone including them is on a learning curve with bpftrace so your question or problem will always be valuable.
 
 Finally, these pdf documents have been converted from github markdown to pdf using pandoc. While pandoc does an analyzing job at this there are some areas where it gets a bit confused, especially marking up code blocks. Apologies in advance for any formatting that looks awkward.
----
 
 ### Labs
 
+<!---
 1. [bpftrace: core language features](bpftrace.pdf)
 1. [Working with system calls](syscalls.pdf)
 1. [Working with kernel probes](kprobe.pdf)
 1. [Working with dynamic user probes](uprobe.pdf)
 1. [Working with static user probes](usdt.pdf)
 1. [Solutions to lab exercises](solutions.pdf)
+-->
+
+1. [bpftrace: core language features](https://home.fburl.com/~jonhaslam/bpftrace-hol/bpftrace.pdf)
+1. [Working with system calls](https://home.fburl.com/~jonhaslam/bpftrace-hol/syscalls.pdf)
+1. [Working with kernel probes](https://home.fburl.com/~jonhaslam/bpftrace-hol/kprobe.pdf)
+1. [Working with dynamic user probes](https://home.fburl.com/~jonhaslam/bpftrace-hol/uprobe.pdf)
+1. [Working with static user probes](https://home.fburl.com/~jonhaslam/bpftrace-hol/usdt.pdf)
+1. [Solutions to lab exercises](https://home.fburl.com/~jonhaslam/bpftrace-hol/solutions.pdf)
