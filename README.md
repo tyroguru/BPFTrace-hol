@@ -1,19 +1,18 @@
 # bpftrace Hands-On Labs
 
-[bpftrace](https://github.com/iovisor/bpftrace) is an OSS project that provides a high level tracing language interface on top of the Enhanced Berkeley Packet Filter (eBPF) framework. It was initially developed by Alistair Robertson and now has a flourishing developer community on github.
+[bpftrace](https://github.com/iovisor/bpftrace) is a dynamic tracing technology on Linux that can revolutionise the way we view our software and systems.  It layers on top of existing BPF goodness to provide a simple to use scripting language that will give you new and fresh insights into the runtime behaviour of the systems you create. It was initially developed by Alistair Robertson and now has a solid developer community on GitHub.
 
 This hands-on lab is designed to be completed in half a day though that may vary depending upon how thorough you want to be with the exercises. It has been written as a kind of "hands-on bootstrapping" guide for the bpftrace beginner and aims to give you enough information to kick-start your productivity with bpftrace. Note that it is by no means a complete treatment of the subject and many things are missed out for the sake of brevity.
 
 We suggest that you complete the labs in the order they are presented below. The sections in each lab generally contain a mix of presented information and suggested exercises. We strongly suggest that you manually run any bpftrace scripts that are used in explanations and feel free to modify them and see what happens!
 
-Finally, note that the lab is designed to be ran stand alone and without a lecturer but it is probably at its best when undertook in a shared learning environment (i.e., having people around to discuss your problems and ideas with!). For help later or on your own, please feel free to post any and all bpftrace questions in [bpftrace helpdesk](https://fb.workplace.com/groups/346871556012338) or [Tracing@FB](https://fb.workplace.com/groups/164037487299023). These groups are quite active.
-
+Finally, note that the lab is designed to be ran stand alone and without a lecturer but it is probably at its best when undertook in a shared learning environment (i.e, having people around to discuss your problems and ideas with!). For help later or on your own, please feel free to post any and all bpftrace questions in the [bpftrace users](https://fb.workplace.com/groups/346871556012338) Workplace group.
 
 ---
 
 ### Prerequisites
 
-1. Currently this lab can only be ran on a Facebook devserver so make sure you've bought yours to the party.
+1. Currently this lab can only be ran on a Meta devserver so make sure you've bought yours to the party.
 1. Unless specified differently, all commands will be executed as the `root` user so ensure you have access to that account.
 
 ### Environment Setup
@@ -27,13 +26,13 @@ Finally, note that the lab is designed to be ran stand alone and without a lectu
 If the above `rpmquery` command returns "`package fb-bpftrace is not installed`" then manually install the package:
 
 ```
-# yum install -q -y fb-bpftrace
+# dnf install -q -y fb-bpftrace
 ```
 
 1. Copy `bpftrace-hol.tar.gz` to your dev server:
 
 ```
-# cp /mnt/homedir/jonhaslam/public_html/bpftrace-hol.tar.gz ~
+# cp /mnt/persistent-public/jonhaslam/public_html/bpftrace-hol.tar.gz ~
 ```
 
 1. If you want to view the pdf's for the course on your laptop then copy `bpftrace-hol.tar.gz` from your dev server to you laptop:
@@ -97,7 +96,7 @@ bpftrace-hol/usdt.pdf
 
 Simply select the integer value corresponding to the area you have been told to run load generators for, e.g., `1` for syscalls, `2` for kprobes, etc. . If at any time you're not sure whether you already have load generators running you can simply select option `8` to kill all existing load generators that may be running.
 
-Some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generally expected that you will look up the language feature in the [online reference guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md).
+Some of the lab exercises will give you a small hint as to what bpftrace language primitive to use to solve them. If this is the case then it is generally expected that you will look up the language feature in the [online reference guide](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc).
 
 Example solutions for all lab exercises are provided in the [solutions document](solutions.pdf).
 
