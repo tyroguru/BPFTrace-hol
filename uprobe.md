@@ -92,7 +92,7 @@ Run on your devserver:
 $ bpftrace -e 'uprobe:/lib64/libc.so.6:exit
 {
     printf("%s exited with code %d\n", comm, arg0);
-}
+}'
 ```
 
 There might be a lot of output, but if you open an extra shell and run
@@ -101,61 +101,6 @@ There might be a lot of output, but if you open an extra shell and run
 *C++ Note:* When observing C++ remember that each function is passed the `this` pointer implcitly as the first argument. This means that when dealing with C++ applications we index a functions arguments starting at arg1 and not arg0.
 
 
-### Hands on: explore symbols to trace
-
-Sometimes you're not sure if the code you're viewing in your editor is the
-same code that's running on a production box. This can get especially
-mind boggling if the codebase churns a lot. In these cases, it can be helpful
-to get the ground truth on what symbols exist on your production box.
-
-For example, to confirm the `exit` from the last example exists in libc, run:
-```
-$ objdump -T /lib64/libc-2.17.so | grep exit
-000000000003a0a0 g    DF .text  0000000000000011  GLIBC_2.10  __cxa_at_quick_exit
-0000000000039c10 g    DF .text  0000000000000017  GLIBC_2.2.5 exit
-00000000000c58d0 g    DF .text  0000000000000055  GLIBC_2.2.5 _exit
-00000000001365d0 g    DF .text  0000000000000025  GLIBC_2.2.5 svc_exit
-000000000003a080 g    DF .text  0000000000000014  GLIBC_2.10  quick_exit
-0000000000039e20 g    DF .text  000000000000004f  GLIBC_2.2.5 __cxa_atexit
-00000000003c63a4 g    DO .data  0000000000000004  GLIBC_2.2.5 argp_err_exit_status
-000000000010c6a0 g    DF .text  000000000000002d  GLIBC_2.2.5 pthread_exit
-00000000003c61f8 g    DO .data  0000000000000004  GLIBC_2.2.5 obstack_exit_failure
-0000000000039c30  w   DF .text  000000000000004c  GLIBC_2.2.5 on_exit
-0000000000115350 g    DF .text  0000000000000002  GLIBC_2.2.5 __cyg_profile_func_exit
-```
-
-`objdump` also has a nice C++ demangling feature:
-```
-$ objdump -t --demangle `which fb-oomd-cpp` | grep updateContext
-0000000000595ef0 g     F .text  0000000000000998              Oomd::Oomd::updateContext(std::unordered_set<Oomd::CgroupPath, std::hash<Oomd::CgroupPath>, std::equal_to<Oomd::CgroupPath>, std::allocator<Oomd::CgroupPath> > const&, Oomd::OomdContext&)
-00000000005953e0 g     F .text  0000000000000b02              Oomd::Oomd::updateContextCgroup(Oomd::CgroupPath const&, Oomd::OomdContext&)
-```
-
-*NOTE:* When tracing C++ applications you must use the *mangled* name of the function in your probe specification. Obviously this can get pretty horrible (especially with templates).
-
-If you're going to trace a dynamically linked library, it can be a nice sanity
-check to see what your application is going to link against:
-```
-$ ldd `which fb-oomd-cpp` 2> /dev/null
-        linux-vdso.so.1 =>  (0x00007ffd0c7d7000)
-        libm.so.6 => /lib64/libm.so.6 (0x00007efeffa64000)
-        libstdc++.so.6 => /lib64/libstdc++.so.6 (0x00007efeff75d000)
-        libatomic.so.1 => not found
-        librt.so.1 => /lib64/librt.so.1 (0x00007efeff555000)
-        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007efeff339000)
-        libdl.so.2 => /lib64/libdl.so.2 (0x00007efeff135000)
-        libbz2.so.1 => /lib64/libbz2.so.1 (0x00007efefef25000)
-        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007efefed0f000)
-        libc.so.6 => /lib64/libc.so.6 (0x00007efefe942000)
-        /usr/local/fbcode/platform007/lib/ld.so => /lib64/ld-linux-x86-64.so.2 (0x00007efeffd66000)
-
-$ ls -l /lib64/libc.so.6
-lrwxrwxrwx. 1 root root 12 Apr 10  2018 /lib64/libc.so.6 -> libc-2.17.so
-```
-
-If your application is statically linked, you can probably find all the symbols
-your application used directly in your binary.
-
 ### Hands on: track process lifetimes
 
 This example brings the previous two examples to the next logical step:
@@ -163,17 +108,20 @@ tracking process lifetimes. Suppose we wanted to figure out how long on
 average particular processes live.
 
 First let's find an appropriate start function to trace:
+
 ```
-$ objdump -T /lib64/libc-2.17.so | grep _start
-0000000000000000  w   DO *UND*  0000000000000000  GLIBC_PRIVATE _dl_starting_up
-0000000000022350 g    DF .text  00000000000001c0  GLIBC_2.2.5 __libc_start_main
+# bpftrace -l 'uprobe:/lib64/libc.so.6:*' | grep _start
+uprobe:/lib64/libc.so.6:__libc_start_call_main
+uprobe:/lib64/libc.so.6:__libc_start_main
 ```
 
 It looks like `__libc_start_main` will work for us.
 
 Now let's create a bpftrace script that will track in histograms how long
 each process lives for:
+
 ```
+# cat process_lifetime.bt
 uprobe:/lib64/libc.so.6:__libc_start_main
 {
   @start_times[pid] = nsecs;
@@ -244,66 +192,6 @@ this script to provide more data.
 
 This example highlights a very important aspect of user probes that can be used to great advantage: we can instrument a library or executable's binary image and we will then fire this probe for every subsequent invocation of the binary image. This provides us with an excellent facility to gain true global insights into all applications that use the instrumented image.
 
-### Hands on: uprobe folly functions
-
-This is a more (than usual) contrived example of `uprobe`ing. Suppose we wanted
-to examine how often and from where `folly::EventBase` methods are called
-inside `dynolog`.  (`dynolog` monitors various system stats on all FB hosts).
-Even more specifically, we're interested in when work is being scheduled.
-
-First, let's double check the symbols we expect to see are there:
-```
-$ sudo objdump -t /proc/`pidof dynolog`/exe | c++filt | grep folly::EventBase::run
-00000000048dd7e0 l     F .text  0000000000000063              unsigned long folly::detail::function::execBig<folly::EventBase::runInEventBaseThreadAndWait(folly::Function<void ()>)::{lambda()#1}>(folly::detail::function::Op, folly::detail::function::Data*, folly::detail::function::Data)
-00000000048ddce0 l     F .text  0000000000000105              void folly::detail::function::FunctionTraits<void ()>::callBig<folly::EventBase::runInEventBaseThreadAndWait(folly::Function<void ()>)::{lambda()#1}>(folly::detail::function::Data&)
-00000000048e1870 g     F .text  000000000000009e              folly::EventBase::runImmediatelyOrRunInEventBaseThreadAndWait(folly::Function<void ()>)
-00000000048df6c0 g     F .text  0000000000000116              folly::EventBase::runInLoop(folly::Function<void ()>, bool)
-00000000048e15c0 g     F .text  00000000000000b3              folly::EventBase::runInEventBaseThread(folly::Function<void ()>)
-00000000048df5b0 g     F .text  0000000000000109              folly::EventBase::runInLoop(folly::EventBase::LoopCallback*, bool)
-00000000048e1680 g     F .text  00000000000001ee              folly::EventBase::runInEventBaseThreadAndWait(folly::Function<void ()>)
-00000000048de8e0 g     F .text  00000000000000fa              folly::EventBase::runBeforeLoop(folly::EventBase::LoopCallback*)
-<snip>
-```
-
-Excellent, it looks like we have stuff available to trace. Note that
-`/proc/<PID>/exe` is just a symlink to the actual binary.
-
-Because C++ symbols are usually mangled, we have to be careful to attach to the
-_mangled_ symbol names. Rather than spending a lot of time piping `objdump`
-output to `c++filt`, copying the pertinent address, searching `objdump` output
-for the symbol address, and then using the mangled name in bpftrace, it can be
-easier to fuzzy match using wildcards:
-
-```
-# cat uprobe_folly.bt
-uprobe:/usr/local/bin/dynolog:*folly*EventBase*run*
-{
-  printf("%s\n", ustack(1));
-  @[ustack] = count();
-}
-
-# bpftrace uprobe_folly.bt
-udo bpftrace uprobe_folly.bt
-Attaching 78 probes...
-        folly::EventBase::runInLoop(folly::EventBase::LoopCallback*, bool)+0
-
-
-        folly::EventBase::runInEventBaseThread(folly::Function<void ()>)+0
-
-
-        folly::EventBase::runInLoop(folly::EventBase::LoopCallback*, bool)+0
-
-
-        folly::EventBase::runLoopCallbacks()+0
-
-
-        folly::EventBase::runLoopCallbacks()+0
-
-
-        folly::EventBase::runLoopCallbacks()+0
-<snip>
-```
-
 ---
 
 ## Exercises
@@ -311,15 +199,6 @@ Attaching 78 probes...
 ### Track process lifetimes
 
 1. Can you make the histgrams display _seconds_ instead of nanoseconds?
-
-### uprobeme
-
-NOTE: before attempting task 2 in this section, select the `uprobes` option from the `bpfhol` menu.
-
-1. Is `uprobeme` statically linked or dynamically linked?
-1. `uprobeme` has two functions, `void foo(void)` and `void bar(void)`. How often
-   are they called?
-
 
 Now we've seen dynamic user probes we move on to [user static probes](usdt.pdf).
 
