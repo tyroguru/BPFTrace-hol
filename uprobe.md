@@ -1,50 +1,90 @@
 ## Dynamic User Probes
 
-In this lab you will experiment with probing dynamic *u*ser probes. *Dynamic*
+XXX use the glibc USDT's we now have. https://fb.workplace.com/groups/fbcode/permalink/5049402751763190/
+In this lab you will experiment with probing dynamic *u*ser probes. These are locations in userland applications and libraries that are made available on-demand by the kernel uprobe subsystem. 
+
 probes are probes that are not *statically* defined apriori in code (e.g., [USDT
 probes](usdt.pdf)). Dynamic probes are discovered on-demand by the kernel uprobe
 subsystem. For userland applications and libraries, a point of instrumentation
 is called a `uprobe`.
 
-The `uprobe` is very similar to [kprobe](kprobe.pdf). When a `uprobe` is armed, the
+The `uprobe` is very similar to the kernel [kfunc/kprobe](kprobe.pdf) probes that we saw previously. When a `uprobe` is armed, the
 kernel will dynamically replace the target address with an `INT3` (0xCC) instruction.
-The original instruction is saved into a special part of the process address
-space and will later be single stepped there. Eventually if the breakpoint (`INT3`)
-is hit, the `uprobe` subsystem will get notified and registered callbacks will be
-run.
+The original instruction is saved into a special part of the process address space and will later be single stepped there. Eventually if the breakpoint (`INT3`)
+is hit, the `uprobe` subsystem will get notified and registered callbacks will be run.
 
-Unlike with `kprobe`s, any part of a userland application can be traced. However,
-this comes with a little bit of extra work. Userspace must tell the kernel
+With a uprobe, any instruction in a userland application can be traced. However, with great power comes great responsibility: for every traced instruction we must dive into the kernel to execute additional code to satisfy the required tracing scripts and this adds latency into the application being traced. While every effort is made to ensure this cost is kept to a minimum it is worth keeping this in mind when tracing latency sensitive parts of applications.
 
-1. The location of the executable. (More specifically the inode, but the distinction
-   is not relevant here).
-1. The offset into the executable to breakpoint.
+### uprobe format
 
-Fortunately, `bpftrace` hides most of this complexity. The end result is the
-interface looks extremely similar to `kprobe`.
-
-### Attaching to a uprobe
+The format of a uprobe is:
 
 ```
-$ bpftrace -e 'uprobe:<library_name>:<function_name> { ... }'
+'uprobe:[:cpp]:<library_name>:<function_name>
 ```
 
-Note the extra `<library_name>` between `uprobe` and `<function_name>`. It is
-slightly different from the `kprobe` syntax.
+The optional `:cpp` component is specific to C++ application tracing and is discussed later. An important concept with uprobes is that the probing is applied to a file (a vnode to be precise) and not specifically to a process. This means that we reference paths to files when specifying a probe to be enabled (e.g `/lib64/libc.so`) and if we want to restrict the probe to a particular process we 
 
-### uprobe/uretprobe and their arguments
+### probe discovery
 
-A key feature of `uprobe`s is that we get access to the arguments via reserved
-keywords `arg0`, `arg1`, `...`,  `argN`. An important note here is that bpftrace
-doesn't provide the facility for us to deal with C++ objects at the minute. Therefore,
-if a function's first argument is something simple such as a `std::string` then it
-isn't currently possible to inspect the actual string associated with that object as
-you would with a C `char *`. This is obviously a significant limitation for the C++
-developer.
+To list the probe sites that are available we simply specify a path to a given library or executable. For example, all the function sites that can be probed in `/lib64/libc.so`:
+
+```
+# bpftrace -l 'uprobe:/lib64/libc.so.6:*'
+uprobe:/lib64/libc.so.6:_Exit
+uprobe:/lib64/libc.so.6:_Fork
+uprobe:/lib64/libc.so.6:_IO_adjust_column
+uprobe:/lib64/libc.so.6:_IO_adjust_wcolumn
+uprobe:/lib64/libc.so.6:_IO_cleanup
+<chop>
+```
+
+To list probes available in a running process we can simply specify a path to the `procfs` executable image for that process:
+
+```
+# bpftrace -l 'uprobe:/proc/1407556/exe:*'
+uprobe:/proc/1407556/exe:_Exit
+uprobe:/proc/1407556/exe:_GLOBAL__sub_I.00090_globals_io.cc
+uprobe:/proc/1407556/exe:_GLOBAL__sub_I_cxx11_locale_inst.cc
+uprobe:/proc/1407556/exe:_GLOBAL__sub_I_cxx11_wlocale_inst.cc
+<chop>
+```
+
+### uprobe arguments
+
+If DWARF debugging information is available for the target binary you wish to trace then arguments are available via the `args` variable. If debug information is not available then  access to function arguments is via
+`arg0`, `arg1`, `...`,  `argN` variables.
 
 Just like `kprobe`s, every `uprobe` comes with a complementary `uretprobe`.
 `uretprobe`s fire _after_ the function returns. Because of this, we get access
 to the return value in the reserved keyword `retval`.
+
+Let's look at an example of how to probe a C++ application that has DWARF debug information available. Firstly start the `uprobes` workload generator from the `bpfhol` load generator main menu (option 4). Now let's look for some functions with arguments:
+
+```
+# pgrep -fl uprobe
+1407556 uprobeme
+# bpftrace -lv  'uprobe:/proc/2303674/exe:cpp:"AddressBook::AddContact"'
+uprobe:/proc/2303674/exe:cpp:"AddressBook::AddContact(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>&)"
+    AddressBook * this
+    std::string & firstName
+    std::string & lastName
+    std::string & number
+```
+
+Things to note:
+
+* The additional `":cpp` probe qualifier allows us to use a demangled form of a C++ symbol. Not only does this mean we don't need to use unwieldy mangled symbols but, more importantly, this acts as a wildcard match for any parameters which is especially convenient matching methods with template parameters.
+
+It isn't currently possible with bpftrace to display C++ type definitions as we can we kernel datatypes as shown previously. 
+
+## Exercises
+
+1. Using the bpfhol `uprobes` workload generator that we referenced above,  dump the arguments being passed into the `AddressBook::AddContact` function.
+2. Write a script to sum the size of strings being passed in for each entry in the Address Book.
+
+
+```
 
 ### Hands on: watch voluntary exit codes
 
@@ -135,15 +175,16 @@ It looks like `__libc_start_main` will work for us.
 Now let's create a bpftrace script that will track in histograms how long
 each process lives for:
 ```
-# cat process_lifetimes.bt
-uprobe:/lib64/libc-2.17.so:__libc_start_main
+uprobe:/lib64/libc.so.6:__libc_start_main
 {
   @start_times[pid] = nsecs;
 }
 
-uprobe:/lib64/libc-2.17.so:exit
+uprobe:/lib64/libc.so.6:exit
+/@start_times[pid] != 0/
 {
   @lifetime_hist[comm] = hist(nsecs - @start_times[pid]);
+  delete(@start_times[pid]);
 }
 
 END
@@ -151,6 +192,8 @@ END
   clear(@start_times);
 }
 ```
+
+Note: it is possible that you may need to adjust the above script to accomodate the libc being linked into your target applications.
 
 This script records the start time in bpftrace-relative nanoseconds for each
 pid. Then on process exit, we correlate the end time with the start time.
@@ -162,46 +205,39 @@ Let's see what happens when we run the script for ~30 seconds:
 $ bpftrace process_lifetime.bt
 Attaching 3 probes...
 ^C
+@lifetime_hist[dig]:
+[8M, 16M)              2 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
 
-...
-@lifetime_hist[timeout]:
-[2M, 4M)               3 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@             |
-[4M, 8M)               1 |@@@@@@@@@@@@@                                       |
-[8M, 16M)              1 |@@@@@@@@@@@@@                                       |
-[16M, 32M)             4 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
-[32M, 64M)             1 |@@@@@@@@@@@@@                                       |
-[64M, 128M)            0 |                                                    |
-[128M, 256M)           0 |                                                    |
-[256M, 512M)           0 |                                                    |
-[512M, 1G)             0 |                                                    |
-[1G, 2G)               0 |                                                    |
-[2G, 4G)               1 |@@@@@@@@@@@@@                                       |
+@lifetime_hist[mkdir]:
+[128K, 256K)           2 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
 
-@lifetime_hist[sh]:
-[2M, 4M)               1 |@@@@@                                               |
-[4M, 8M)               1 |@@@@@                                               |
+@lifetime_hist[awk]:
+[512K, 1M)             1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+[1M, 2M)               0 |                                                    |
+[2M, 4M)               0 |                                                    |
+[4M, 8M)               0 |                                                    |
 [8M, 16M)              0 |                                                    |
-[16M, 32M)             1 |@@@@@                                               |
-[32M, 64M)             0 |                                                    |
-[64M, 128M)            0 |                                                    |
-[128M, 256M)           0 |                                                    |
-[256M, 512M)           0 |                                                    |
-[512M, 1G)             0 |                                                    |
-[1G, 2G)               0 |                                                    |
-[2G, 4G)              10 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+[16M, 32M)             1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
 
-@lifetime_hist[bash]:
-[4M, 8M)               1 |@                                                   |
-[8M, 16M)              1 |@                                                   |
-[16M, 32M)             3 |@@@                                                 |
-[32M, 64M)             0 |                                                    |
-[64M, 128M)            0 |                                                    |
-[128M, 256M)           0 |                                                    |
-[256M, 512M)           0 |                                                    |
-[512M, 1G)             0 |                                                    |
-[1G, 2G)               0 |                                                    |
-[2G, 4G)              43 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
-...
+@lifetime_hist[find]:
+[256K, 512K)           2 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+
+@lifetime_hist[grep]:
+[256K, 512K)           1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+[512K, 1M)             0 |                                                    |
+[1M, 2M)               0 |                                                    |
+[2M, 4M)               0 |                                                    |
+[4M, 8M)               0 |                                                    |
+[8M, 16M)              0 |                                                    |
+[16M, 32M)             0 |                                                    |
+[32M, 64M)             1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+
+@lifetime_hist[cut]:
+[128K, 256K)           3 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+
+@lifetime_hist[cat]:
+[128K, 256K)           2 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+[256K, 512K)           1 |@@@@@@@@@@@@@@@@@@@@@@@@@@                          |
 ```
 
 Now we have some nice adhoc data on process lifetimes. We could easily customize
