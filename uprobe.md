@@ -20,7 +20,7 @@ With a uprobe, any instruction in a userland application can be traced. However,
 The format of a uprobe is:
 
 ```
-'uprobe:[:cpp]:<library_name>:<function_name>
+uprobe:<library_name>:[:cpp]<function_name>
 ```
 
 The optional `:cpp` component is specific to C++ application tracing and is discussed later. An important concept with uprobes is that the probing is applied to a file (a vnode to be precise) and not specifically to a process. This means that we reference paths to files when specifying a probe to be enabled (e.g `/lib64/libc.so`) and if we want to restrict the probe to a particular process we 
@@ -74,7 +74,7 @@ uprobe:/proc/2303674/exe:cpp:"AddressBook::AddContact(std::__cxx11::basic_string
 
 Things to note:
 
-* The additional `":cpp` probe qualifier allows us to use a demangled form of a C++ symbol. Not only does this mean we don't need to use unwieldy mangled symbols but, more importantly, this acts as a wildcard match for any parameters which is especially convenient matching methods with template parameters.
+* The additional `:cpp` probe qualifier allows us to use a demangled form of a C++ symbol. Not only does this mean we don't need to use unwieldy mangled symbols but, more importantly, this acts as a wildcard match for any parameters which is especially convenient matching methods with template parameters.
 
 It isn't currently possible with bpftrace to display C++ type definitions as we can we kernel datatypes as shown previously. 
 
@@ -84,16 +84,15 @@ It isn't currently possible with bpftrace to display C++ type definitions as we 
 2. Write a script to sum the size of strings being passed in for each entry in the Address Book.
 
 
-```
-
 ### Hands on: watch voluntary exit codes
 
 Run on your devserver:
+
 ```
-$ bpftrace -e 'uprobe:/lib64/libc-2.17.so:exit
+$ bpftrace -e 'uprobe:/lib64/libc.so.6:exit
 {
     printf("%s exited with code %d\n", comm, arg0);
-}'
+}
 ```
 
 There might be a lot of output, but if you open an extra shell and run
