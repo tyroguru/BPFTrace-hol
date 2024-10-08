@@ -1,6 +1,6 @@
 # bpftrace
 
-In this lab we will work through some of the key features of the bpftrace tracing technology and its language which is known as `bpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. Please refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
+In this lab we will work through some of the key features of the bpftrace tracing technology and its language which is known as `BpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. Please refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
 
 **bpftrace** is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
 
@@ -19,7 +19,7 @@ bpftrace solves these problems by allowing us to dynamically modify our system t
 
 ## Action Blocks
 
-bpftrace scripts (written in the *bpfScript* tracing language) are made up of one or more *Action Blocks*. An action block contains 3 parts in the following order:
+bpftrace scripts (written in the *BpfScript* tracing language) are made up of one or more *Action Blocks*. An action block contains 3 parts in the following order:
 
 * **A probe**: this is a place of interest where we interrupt the executing thread. There are numerous probe types but examples include the location of a function (e.g, strcmp(3)), when a system call is executed (e.g, write(2)), an event such as a performance counter overflow event, or a periodic timer. The key point here is that this is somewhere where we can collect data.
 * **An optional predicate** (sometimes called a *filter*). This is a logical condition which allows us to decide if we are interested in recording data for this event. For example, is the current process named 'bash' or is the file we are writing to located in `/tmp`. Predicates are contained in between two forward slash characters.
@@ -49,10 +49,10 @@ Attaching 314 probes...
 
 ^C
 <output elided>
-@calls[tracepoint:syscalls:sys_enter_openat]: 249219
 @calls[tracepoint:syscalls:sys_enter_newfstatat]: 240998
-@calls[tracepoint:syscalls:sys_enter_futex]: 283681
+@calls[tracepoint:syscalls:sys_enter_openat]: 249219
 @calls[tracepoint:syscalls:sys_enter_read]: 283535
+@calls[tracepoint:syscalls:sys_enter_futex]: 283681
 @calls[tracepoint:syscalls:sys_enter_close]: 351776
 ```
 
@@ -193,7 +193,7 @@ Note that the `interval` based probes we have used previously only fire on a sin
 
 1. A `profile` probe is the same format as the `interval` probe that we have seen previously. Write a script which uses a 10 millisecond `profile` probe (profile:ms:10)  to count the number of times a non-root thread (uid != 0) was running when the probe fired. (Hints: key the map with the `cpu` builtin variable and you'll also need the `uid` builtin variable. Bonus points for use of the `if` statement instead of a predicate (it's not any better here but just provides variation!).
 
-Now that we've covered some of the basic building blocks of bpftrace, we'll continue the voyage of discovery by looking at the fundamental interface between userland code and the kernel: the [system call](https://home.fburl.com/~jonhaslam/bpftrace-hol/syscalls.pdf).
+Now that we've covered some of the basic building blocks of bpftrace, we'll continue the voyage of discovery by looking at the fundamental interface between userland code and the kernel: the [system call](syscalls.md).
 
 ## Further Reading
 

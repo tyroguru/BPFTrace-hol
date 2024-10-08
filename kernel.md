@@ -153,7 +153,7 @@ blkid blkid.tab.old
 
 1. Expand the above script to print the parent directory for the file being unlinked. Hint: xxx
 
-Top tip: We can use the `print()` bpfscript function to print out members in an object without explicitly specifying them. For example, the arguments for a `vfs_write()` call are:
+Top tip: We can use the `print()` BpfScript function to print out members in an object without explicitly specifying them. For example, the arguments for a `vfs_write()` call are:
 
 ```
 $ bpftrace -lv 'kfunc:vfs_write'
@@ -191,7 +191,7 @@ Attaching 1 probe...
 
 ## kretfunc probes
 
-The typed return argument from a function is available through the `retval` variable in a `kretfunc` probe. The following example displays how easy it is to use with the kernel `fget()` function. This function returns a 'struct file' for a given file descriptor so we can use that to 
+The typed return argument from a function is available through the `retval` variable in a `kretfunc` probe. The following example displays how easy it is to use with the kernel `fget()` function. This function returns a 'struct file' for a given file descriptor so we can use that to extract filenames:
 
 ```
 # bpftrace -lv 'kretfunc:fget'
@@ -219,11 +219,10 @@ sudo (fd8):  libcrack.so.2.9.0
 
 ### kprobe/kretprobe and their arguments
 
-XXX kprobe - talk about how to access per instruction offsets and give example. That's the only real reason why you would use them I think over kfuncs.
+XXX Example with kprobe:func+offset and register extraction preferably with inline function. Talk about how to access per instruction offsets and give example. That's the only real reason why you would use them I think over kfuncs.
 
 `kprobe' probes arguments are not typed and therefore, for most use cases, the newer `kfunc` probes that we have described above should be used. One area that the kprobe has unique functionality is its ability to probe individiual kernel instruction sites and not just function entry and return locations as with `kfunc` probes.
 
-Example with krpobe:func+offset and register extraction preferably with inline function.
 
 ## Static tracepoints
 
@@ -284,10 +283,9 @@ Things to note:
 Expand the lock contention script to include the following functionality:
 
 1. Make the block duration threshold time (currently set to 100 microsecs) into a parameter passed into the script.
-1. For locks that exceed the threshold duration, instead of printing information, store the block time into a map named `long_block_times` and use the hist() action and indexed using the lock addressed.
+1. For locks that exceed the threshold duration, instead of printing information, store the blocking time into a map named `long_block_times` and use the hist() action and indexed using the lock addressed.
 1. Add an END probe where you print out the `@long_block_times` map but not the anonymous map used to calculate the results.
-1. If time allows, instead of printing the `@long_block_times` map, iterate over the map using a `for()` loop to iterate over the map and print each entry. (XXX "Loop expression does not support type: hist" XXX .
-1. using the flag definitions for `args.flags` in `include/trace/events/lock.h`, modify the script to print which type of lock is being dealt with.
+1. For the extra keen, use the flag definitions for `args.flags` in `include/trace/events/lock.h` and  modify the script to print which type of lock is being dealt with.
 
 
 The following 3 articles contain everything you need to know about Linux's static tracepoints:
@@ -298,11 +296,9 @@ The following 3 articles contain everything you need to know about Linux's stati
 
 ## Exercises
 
-### kprobeme
+NOTE: before attempting the tasks in this section select the `kernel` option from the `bpfhol` menu.
 
-NOTE: before attempting the tasks in this section select the `kprobes` option from the `bpfhol` menu.
-
-1. `kprobeme` `open(2)`s and `read(2)`s a file once a second. Which file is it?
+1. The `kprobeme` process `open(2)`s and `read(2)`s a file once a second. Which file is it?
 1. Is `kprobeme` opening a new file descriptor every time?
 1. Is `kprobeme` leaking file descriptors? (HINT: use an associative map)
 

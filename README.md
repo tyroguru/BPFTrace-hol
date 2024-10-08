@@ -102,8 +102,6 @@ Example solutions for all lab exercises are provided in the [solutions document]
 
 Please use your instructor to discuss any issues or problems you may have. Everyone including them is on a learning curve with bpftrace so your question or problem will always be valuable.
 
-Finally, these pdf documents have been converted from github markdown to pdf using pandoc. While pandoc does an analyzing job at this there are some areas where it gets a bit confused, especially marking up code blocks. Apologies in advance for any formatting that looks awkward.
-
 ### Labs
 
 <!---

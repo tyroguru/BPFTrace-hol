@@ -124,7 +124,7 @@ NOTE: before attempting the tasks in this section select the `syscalls` option f
 
 1. Find all close() calls on invalid file descriptors.
 
-In the next section we take a dive into tracing kernel [functions](https://home.fburl.com/~jonhaslam/bpftrace-hol/kprobe.pdf).
+In the next section we take a dive into tracing kernel [functions](kprobe.md).
 
 
 ## Further Reading

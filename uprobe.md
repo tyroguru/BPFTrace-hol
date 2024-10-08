@@ -1,12 +1,6 @@
 ## Dynamic User Probes
 
-XXX use the glibc USDT's we now have. https://fb.workplace.com/groups/fbcode/permalink/5049402751763190/
-In this lab you will experiment with probing dynamic *u*ser probes. These are locations in userland applications and libraries that are made available on-demand by the kernel uprobe subsystem. 
-
-probes are probes that are not *statically* defined apriori in code (e.g., [USDT
-probes](usdt.pdf)). Dynamic probes are discovered on-demand by the kernel uprobe
-subsystem. For userland applications and libraries, a point of instrumentation
-is called a `uprobe`.
+In this lab you will experiment with probing dynamic *u*ser probes (`uprobes`). These are locations in userland applications and libraries that are made available on-demand by the kernel uprobe subsystem. 
 
 The `uprobe` is very similar to the kernel [kfunc/kprobe](kprobe.pdf) probes that we saw previously. When a `uprobe` is armed, the
 kernel will dynamically replace the target address with an `INT3` (0xCC) instruction.
@@ -20,7 +14,7 @@ With a uprobe, any instruction in a userland application can be traced. However,
 The format of a uprobe is:
 
 ```
-uprobe:<library_name>:[:cpp]<function_name>
+uprobe:<library_name>:[cpp:]<function_name>
 ```
 
 The optional `:cpp` component is specific to C++ application tracing and is discussed later. An important concept with uprobes is that the probing is applied to a file (a vnode to be precise) and not specifically to a process. This means that we reference paths to files when specifying a probe to be enabled (e.g `/lib64/libc.so`) and if we want to restrict the probe to a particular process we 
