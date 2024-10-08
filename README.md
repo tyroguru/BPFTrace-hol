@@ -113,9 +113,8 @@ Please use your instructor to discuss any issues or problems you may have. Every
 1. [Solutions to lab exercises](solutions.pdf)
 -->
 
-1. [bpftrace: core language features](https://home.fburl.com/~jonhaslam/bpftrace-hol/bpftrace.pdf)
-1. [Working with system calls](https://home.fburl.com/~jonhaslam/bpftrace-hol/syscalls.pdf)
-1. [Working with kernel probes](https://home.fburl.com/~jonhaslam/bpftrace-hol/kprobe.pdf)
-1. [Working with dynamic user probes](https://home.fburl.com/~jonhaslam/bpftrace-hol/uprobe.pdf)
-1. [Working with static user probes](https://home.fburl.com/~jonhaslam/bpftrace-hol/usdt.pdf)
-1. [Solutions to lab exercises](https://home.fburl.com/~jonhaslam/bpftrace-hol/solutions.pdf)
+1. [bpftrace: core language features](bpftrace.md)
+1. [Working with system calls](syscalls.md)
+1. [Working with kernel probes](kernel.md)
+1. [Working with dynamic user probes](uprobe.md)
+1. [Solutions to lab exercises](solutions.md)
