@@ -1,6 +1,6 @@
 # bpftrace Hands-On Labs
 
-[bpftrace](https://github.com/iovisor/bpftrace) is a dynamic tracing technology on Linux that can revolutionise the way we view our software and systems.  It layers on top of existing BPF goodness to provide a simple to use scripting language that will give you new and fresh insights into the runtime behaviour of the systems you create. It was initially developed by Alistair Robertson and now has a solid developer community on GitHub.
+[bpftrace](https://github.com/iovisor/bpftrace) is a dynamic tracing technology on Linux that can revolutionise the way we view our software and systems.  It layers on top of existing BPF goodness to provide a simple to use scripting language that will give you new and fresh insights into the runtime behaviour of the systems you create. It was initially developed by Alastair Robertson and now has a solid developer community on GitHub.
 
 This hands-on lab is designed to be completed in half a day though that may vary depending upon how thorough you want to be with the exercises. It has been written as a kind of "hands-on bootstrapping" guide for the bpftrace beginner and aims to give you enough information to kick-start your productivity with bpftrace. Note that it is by no means a complete treatment of the subject and many things are missed out for the sake of brevity.
 
