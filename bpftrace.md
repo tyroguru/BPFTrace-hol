@@ -1,8 +1,8 @@
 # bpftrace
 
-In this lab we will work through some of the key features of the bpftrace tracing technology and its language which is known as `BpfScript`. It is not an exhaustive treatment of the language but rather the key concepts. Please refer you to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
+In this lab we will work through some of the key features of the bpftrace tracing technology and its language, which is known as `BpfScript`. This lab is not an exhaustive treatment of the language but rather the key concepts. Please refer to the [bpftrace manual](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc) for details on all language features.
 
-**bpftrace** is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write (which is rarely what we think it actually is!). In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
+**bpftrace** is specifically designed for tracing user and kernel software. Its primary purpose is to facilitate observation of software behaviour. As such, it provides a number of key language primitives that enable us to gain detailed insights into the real runtime behaviour of the code we write, which is rarely what we think it actually is!. In this section we will look at the key language primitives and some techniques which enable us to obtain fresh insights.
 
 ## Dynamic Tracing - So What!??
 
@@ -13,7 +13,7 @@ A key attribute of bpftrace is its *dynamic* nature. To understand the myriad co
 1. Analyze data
 1. Repeat until satisfaction is achieved
 
-The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and even on anything but trivial development systems it can be painful to do this. In addition to this, we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we need to debug a problem.
+The "problem" with the above sequence is that modifying software to generate the trace data and re-running experiments tends to dominate the time (step 2). In production it is often impossible to install such debug binaries and very painful on anything but trivial development systems. In addition, we rarely capture the data that we need the first time around and it often takes many iterations to gather all the data we need to debug a problem.
 
 bpftrace solves these problems by allowing us to dynamically modify our system to capture arbitrary data without modifying any code. As modifying the system is so easy to do, we can very quickly iterate through different hypotheses and gain novel insights about systemic behaviour in very short periods of time.
 
@@ -61,7 +61,7 @@ Things to note:
 * We use a wildcard (`*`) to pattern match all the system call entry probes.
 * `@calls[]` declares a special type of associative array (known as a *map* or an *aggregation*). We didn't have to name the associative array as we only have one - we could have just used the `@` sign on its own (known as the `anonymous array`).
 * We index the `@calls[]` array using the `probe` builtin variable. This expands to the name of the probe that has been fired (e.g, `tracepoint:syscalls:sys_enter_futex`).
-* Each entry in a map can have one of a number of pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time we hit the probe and we therefore keep count of the number of times a probe has been hit.
+* Each entry in a map can have one of a number of values or pre-defined functions associated with it. Here the `count()` function simply increments an associated counter every time the function is called and we therefore keep count of the number of times a probe has been hit.
 
 **NOTE:** The order and number of system calls you see will be different to the output given above. For the sake of this example we will focus on `close()` calls.
 
@@ -112,7 +112,7 @@ Attaching 1 probe...
 
 Things to note:
 
-* We now keep a count of the number of times a unique stack trace was seen for each close syscall by using the `ustack` builtin to index a map and using the `count()` map function for value.
+* We now keep a count of the number of times a unique stack trace was seen for each close syscall by using the `ustack` builtin as the map key and using the `count()` map function for its value.
 
 ### Exercises
 
