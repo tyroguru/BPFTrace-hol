@@ -22,14 +22,14 @@ mv "$BUILD_DIR"/load_generators/bpfhol/bpfhol "$BUILD_DIR"
 rm -r "$BUILD_DIR"/load_generators/bpfhol
 
 # Build docs
-for doc in *.md; do
-  pandoc "$doc" -o "$BUILD_DIR"/$(basename "$doc" .md).pdf -V urlcolor=blue
+#for doc in *.md; do
+#  pandoc "$doc" -o "$BUILD_DIR"/$(basename "$doc" .md).pdf -V urlcolor=blue
 
   # You definitely want the below command. It formats way better than the above. However,
   # it requires pandoc version 2.x+. So we leave the above for older systems.
   #
   #pandoc "$doc" -f gfm -o "$BUILD_DIR"/$(basename "$doc" .md).pdf -V urlcolor=blue
-done
+# done
 
 # Tarball the results
 tar -cvzf "$OUT_TARBALL" "$BUILD_DIR" \

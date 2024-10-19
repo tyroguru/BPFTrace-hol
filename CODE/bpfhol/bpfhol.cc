@@ -43,6 +43,10 @@ void execute(std::string& path)
   else
   {
       allpids.push_back(pid);
+
+//      std::cout << "\n+-----------+\n";
+ //     std::cout << "Running load generator; choose (exit) to stop";
+//      std::cout << "\n+-----------+\n\n";
   }
 }
 
@@ -197,9 +201,5 @@ int main(int argc, char *argv[])
         default:
                 break;
     }
-
-    std::cout << "\n+-----------+\n";
-    std::cout << "Running load generator; choose (exit) to stop";
-    std::cout << "\n+-----------+\n\n";
   }
 }
