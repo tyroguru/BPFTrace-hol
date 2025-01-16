@@ -1,0 +1,4 @@
+tracepoint:bpf_trace:bpf_trace_printk
+{
+  printf("%s\n", str(args.bpf_string));
+}

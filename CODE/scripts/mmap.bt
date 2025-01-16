@@ -1,0 +1,9 @@
+t:syscalls:sys_enter_mmap
+{
+  @[comm] = count();
+}
+
+interval:s:30
+{
+  print(@);
+}

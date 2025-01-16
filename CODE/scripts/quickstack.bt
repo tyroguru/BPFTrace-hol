@@ -1,0 +1,4 @@
+tracepoint:syscalls:sys_enter_ptrace
+{
+  @calls[curtask->real_parent->real_parent->pid, curtask->real_parent->real_parent->comm] = count();
+}

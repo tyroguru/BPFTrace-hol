@@ -1,0 +1,4 @@
+kfunc:vfs_*
+{
+  @[probe] = count();
+}

@@ -1,0 +1,4 @@
+tracepoint:nmi:nmi_handler
+{
+  printf("Hit!\n");
+}

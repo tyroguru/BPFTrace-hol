@@ -1,0 +1,32 @@
+BEGIN
+{
+  @block_threshold = $1;
+}
+
+tracepoint:lock:contention_begin
+{
+  @[tid, args.lock_addr] = nsecs;
+}
+
+tracepoint:lock:contention_end
+/@[tid, args.lock_addr] != 0/
+{
+  $lock_duration = nsecs - @[tid, args.lock_addr];
+  /* if ($lock_duration > 1000*100) { */
+  if ($lock_duration > @block_threshold) { /* 100 microsecs */
+    printf("%llx (%s) contended time: %lld\n", args.lock_addr, ksym(args.lock_addr),  $lock_duration);
+    print(kstack);
+    @long_block_times[args.lock_addr] = hist($lock_duration);
+  }
+
+  delete(@[tid, args.lock_addr]);
+}
+
+END
+{
+  clear(@);
+  print( @long_block_times);
+  /* for ($kv : @long_block_times) {
+    printf("%llx duration\n", $kv.0);
+  } */
+}

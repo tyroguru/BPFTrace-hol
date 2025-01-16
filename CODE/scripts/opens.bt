@@ -1,0 +1,4 @@
+t:syscalls:sys_enter_open
+{
+  @[str(args->filename)] = count();
+}

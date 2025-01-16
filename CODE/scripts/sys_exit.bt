@@ -1,0 +1,4 @@
+t:syscalls:sys_exit_exit
+{
+  printf("%s hit for %s\n", probe, comm);
+}

@@ -1,0 +1,17 @@
+#include <errno.h>
+// #define EBADF 9
+
+t:syscalls:sys_enter_close
+{
+    @[tid] = args.fd;
+}
+
+t:syscalls:sys_exit_close
+{
+    if (args.ret == -EBADF)
+    {
+        print(@[tid]);
+    }
+
+    delete(@, tid);
+}

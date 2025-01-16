@@ -1,0 +1,4 @@
+kprobe:do_sys_openat2+0x166
+{
+  printf("%llx\n", reg("ip"));
+}

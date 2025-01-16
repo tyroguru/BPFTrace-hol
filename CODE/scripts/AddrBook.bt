@@ -1,0 +1,6 @@
+uprobe:/proc/4065051/exe:cpp:"AddressBook::AddContact"
+{
+  @["firstName"] = sum(args.firstName._M_string_length);
+  print(*args.this); 
+  printf("sizeof %d\n", sizeof(args.this->Entries));
+}

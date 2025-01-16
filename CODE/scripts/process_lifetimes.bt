@@ -1,0 +1,16 @@
+uprobe:/lib64/libc.so.6:__libc_start_main
+{
+  @start_times[pid] = nsecs;
+}
+
+uprobe:/lib64/libc.so.6:exit
+/@start_times[pid] != 0/
+{
+  @lifetime_hist[comm] = hist(nsecs - @start_times[pid]);
+  delete(@start_times[pid]);
+}
+
+END
+{
+  clear(@start_times);
+}

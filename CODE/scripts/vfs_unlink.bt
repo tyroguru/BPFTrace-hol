@@ -1,0 +1,4 @@
+kfunc:vfs_unlink
+{
+  printf("%s %s\n", comm, str(args.dentry->d_name.name));
+}

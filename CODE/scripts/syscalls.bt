@@ -1,0 +1,4 @@
+t:syscalls:sys_enter_*
+{
+  @[probe] = count();
+}

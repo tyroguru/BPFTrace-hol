@@ -1,0 +1,10 @@
+t:syscalls:sys_enter_mmap
+/comm == "mapit"/
+{
+  @[args->len/1024] = count();
+}
+
+interval:s:30
+{
+  print(@);
+}

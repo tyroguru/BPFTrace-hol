@@ -1,0 +1,7 @@
+kretfunc:fget
+/retval/
+{
+  if (strcontains(str(retval->f_path.dentry->d_name.name), "crack")) {
+    printf("%s (fd%d):  %s\n", comm, args.fd, str(retval->f_path.dentry->d_name.name));
+  }
+}
