@@ -13,8 +13,8 @@
  * This is a bodge implementation just to get things up and running
  * quickly. If this is published anywhere I will rewrite it in an OO style.
  */
-std::string options = "1. syscalls\n2. kernel\n3. usdt\n4. uprobes\n8. stop "
-                      "current generator\n9. exit\n\nSelect Option: ";
+std::string options = "1. core\n2. syscalls\n3. kernel\n4. usdt\n4. uprobes\n"
+                      "8. stop current generator\n9. exit\n\nSelect Option: ";
 std::vector<pid_t> allpids;
 std::string BASEDIR;
 
@@ -44,6 +44,14 @@ void execute(std::string &path) {
 void syscalls() {
   std::string progs[] = {"syscalls/closeall", "syscalls/mapit",
                          "syscalls/tempfiles"};
+
+  for (auto prog : progs) {
+    execute(prog);
+  }
+}
+
+void core() {
+  std::string progs[] = {"core/core"};
 
   for (auto prog : progs) {
     execute(prog);
@@ -137,20 +145,25 @@ int main(int argc, char *argv[]) {
     switch (std::stoi(choice)) {
     case 1:
       terminate();
-      syscalls();
+      core();
       break;
 
     case 2:
       terminate();
-      kprobes();
+      syscalls();
       break;
 
     case 3:
       terminate();
-      usdt();
+      kprobes();
       break;
 
     case 4:
+      terminate();
+      usdt();
+      break;
+
+    case 5:
       terminate();
       uprobes();
       break;

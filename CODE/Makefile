@@ -1,4 +1,4 @@
-SUBDIRS = bpfhol kprobes syscalls usdt uprobes
+SUBDIRS = bpfhol core kprobes syscalls usdt uprobes
 
 .PHONY: subdirs $(SUBDIRS)
 subdirs: $(SUBDIRS)
