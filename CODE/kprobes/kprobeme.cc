@@ -34,6 +34,13 @@ int main() {
       }
     }
 
+    char filename[] = "/tmp/bpftrace-HOL-.XXXXXX";
+    int fd = mkstemp(filename);
+    if (fd != -1) {
+      close(fd);
+      unlink(filename);
+    }
+
     std::this_thread::sleep_for(1s);
   }
 }
