@@ -1,7 +1,7 @@
 all:	kprobeme
 
 kprobeme:	kprobeme.cc
-		clang++ -g -o kprobeme kprobeme.cc -static
+		clang++ -g  -std=c++20 -o kprobeme kprobeme.cc -static
 
 clean:
 	rm kprobeme
