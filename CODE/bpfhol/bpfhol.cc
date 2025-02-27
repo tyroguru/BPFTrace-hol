@@ -13,7 +13,7 @@
  * This is a bodge implementation just to get things up and running
  * quickly. If this is published anywhere I will rewrite it in an OO style.
  */
-std::string options = "1. core\n2. syscalls\n3. kernel\n4. usdt\n4. uprobes\n"
+std::string options = "1. core\n2. syscalls\n3. kernel\n4. usdt\n5. uprobes\n"
                       "8. stop current generator\n9. exit\n\nSelect Option: ";
 std::vector<pid_t> allpids;
 std::string BASEDIR;
